@@ -4,10 +4,14 @@ from reconchess import *
 
 class GnashBot(Player):
     def __init__(self):
-        pass
+        self.color = None
+        self.board = None
+        self.boardView = None #Position of GnashBot's pieces
 
     def handle_game_start(self, color: Color, board: chess.Board, opponent_name: str):
-        pass
+        self.color = color
+        self.board = board
+        self.boardView = board.pieces
 
     def handle_opponent_move_result(self, captured_my_piece: bool, capture_square: Optional[Square]):
         pass
