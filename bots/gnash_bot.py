@@ -2,7 +2,10 @@ import random
 from reconchess import *
 
 
-class RandomBot2(Player):
+class GnashBot(Player):
+    def __init__(self):
+        pass
+
     def handle_game_start(self, color: Color, board: chess.Board, opponent_name: str):
         pass
 
