@@ -1,0 +1,52 @@
+Game has started.
+
+Opponent sensed.
+
+Opponent moved.
+No pieces captured.
+
+Sensing now...
+
+Sensing move is 19
+
+Sense result is [(26, None), (27, Piece.from_symbol('P')), (28, None), (18, None), (19, None), (20, None), (10, Piece.from_symbol('P')), (11, None), (12, Piece.from_symbol('P'))]
+Updating belief state...
+Our updated belief dist is now as follows:
+	MY BOARD DISTRIBUTION: (1)
+		 rnbqkbnr/pppppppp/8/8/3P4/8/PPP1PPPP/RNBQKBNR b KQkq - 0 1 	probability: 1.0
+MOVE ACTIONS: [Move.from_uci('g8h6'), Move.from_uci('g8f6'), Move.from_uci('b8c6'), Move.from_uci('b8a6'), Move.from_uci('h7h6'), Move.from_uci('g7g6'), Move.from_uci('f7f6'), Move.from_uci('e7e6'), Move.from_uci('d7d6'), Move.from_uci('c7c6'), Move.from_uci('b7b6'), Move.from_uci('a7a6'), Move.from_uci('h7h5'), Move.from_uci('g7g5'), Move.from_uci('f7f5'), Move.from_uci('e7e5'), Move.from_uci('d7d5'), Move.from_uci('c7c5'), Move.from_uci('b7b5'), Move.from_uci('a7a5'), Move.from_uci('a7b6'), Move.from_uci('b7a6'), Move.from_uci('b7c6'), Move.from_uci('c7b6'), Move.from_uci('c7d6'), Move.from_uci('d7c6'), Move.from_uci('d7e6'), Move.from_uci('e7d6'), Move.from_uci('e7f6'), Move.from_uci('f7e6'), Move.from_uci('f7g6'), Move.from_uci('g7f6'), Move.from_uci('g7h6'), Move.from_uci('h7g6')]
+MOVE: g8f6
+
+Requested move g8f6 , took move g8f6
+
+Opponent sensed.
+
+Opponent moved.
+No pieces captured.
+
+Sensing now...
+
+Sensing move is 19
+
+Sense result is [(26, None), (27, Piece.from_symbol('P')), (28, None), (18, None), (19, None), (20, None), (10, Piece.from_symbol('P')), (11, None), (12, Piece.from_symbol('P'))]
+Updating belief state...
+Our updated belief dist is now as follows:
+	MY BOARD DISTRIBUTION: (17)
+		 rnbqkb1r/pppppppp/5n2/8/3P4/7N/PPP1PPPP/RNBQKB1R b KQkq - 2 2 	probability: 0.058823529411764705
+		 rnbqkb1r/pppppppp/5n2/8/3P4/5N2/PPP1PPPP/RNBQKB1R b KQkq - 2 2 	probability: 0.058823529411764705
+		 rnbqkb1r/pppppppp/5n1B/8/3P4/8/PPP1PPPP/RN1QKBNR b KQkq - 2 2 	probability: 0.058823529411764705
+		 rnbqkb1r/pppppppp/5n2/6B1/3P4/8/PPP1PPPP/RN1QKBNR b KQkq - 2 2 	probability: 0.058823529411764705
+		 rnbqkb1r/pppppppp/5n2/8/3P1B2/8/PPP1PPPP/RN1QKBNR b KQkq - 2 2 	probability: 0.058823529411764705
+		 rnbqkb1r/pppppppp/5n2/8/3P4/N7/PPP1PPPP/R1BQKBNR b KQkq - 2 2 	probability: 0.058823529411764705
+		 rnbqkb1r/pppppppp/5n2/8/3P4/7P/PPP1PPP1/RNBQKBNR b KQkq - 0 2 	probability: 0.058823529411764705
+		 rnbqkb1r/pppppppp/5n2/8/3P4/6P1/PPP1PP1P/RNBQKBNR b KQkq - 0 2 	probability: 0.058823529411764705
+		 rnbqkb1r/pppppppp/5n2/8/3P4/5P2/PPP1P1PP/RNBQKBNR b KQkq - 0 2 	probability: 0.058823529411764705
+		 rnbqkb1r/pppppppp/5n2/8/3P4/1P6/P1P1PPPP/RNBQKBNR b KQkq - 0 2 	probability: 0.058823529411764705
+		 rnbqkb1r/pppppppp/5n2/8/3P4/P7/1PP1PPPP/RNBQKBNR b KQkq - 0 2 	probability: 0.058823529411764705
+		 rnbqkb1r/pppppppp/5n2/8/3P3P/8/PPP1PPP1/RNBQKBNR b KQkq - 0 2 	probability: 0.058823529411764705
+		 rnbqkb1r/pppppppp/5n2/8/3P2P1/8/PPP1PP1P/RNBQKBNR b KQkq - 0 2 	probability: 0.058823529411764705
+		 rnbqkb1r/pppppppp/5n2/8/3P1P2/8/PPP1P1PP/RNBQKBNR b KQkq - 0 2 	probability: 0.058823529411764705
+		 rnbqkb1r/pppppppp/5n2/8/1P1P4/8/P1P1PPPP/RNBQKBNR b KQkq - 0 2 	probability: 0.058823529411764705
+		 rnbqkb1r/pppppppp/5n2/8/P2P4/8/1PP1PPPP/RNBQKBNR b KQkq - 0 2 	probability: 0.058823529411764705
+		 rnbqkb1r/pppppppp/5n2/8/3P4/8/PPP1PPPP/RNBQKBNR b KQkq - 2 2 	probability: 0.058823529411764705
+MOVE ACTIONS: [Move.from_uci('h8g8'), Move.from_uci('b8c6'), Move.from_uci('b8a6'), Move.from_uci('f6g8'), Move.from_uci('f6h5'), Move.from_uci('f6d5'), Move.from_uci('f6g4'), Move.from_uci('f6e4'), Move.from_uci('h7h6'), Move.from_uci('g7g6'), Move.from_uci('e7e6'), Move.from_uci('d7d6'), Move.from_uci('c7c6'), Move.from_uci('b7b6'), Move.from_uci('a7a6'), Move.from_uci('h7h5'), Move.from_uci('g7g5'), Move.from_uci('e7e5'), Move.from_uci('d7d5'), Move.from_uci('c7c5'), Move.from_uci('b7b5'), Move.from_uci('a7a5'), Move.from_uci('a7b6'), Move.from_uci('b7a6'), Move.from_uci('b7c6'), Move.from_uci('c7b6'), Move.from_uci('c7d6'), Move.from_uci('d7c6'), Move.from_uci('d7e6'), Move.from_uci('e7d6'), Move.from_uci('f7e6'), Move.from_uci('f7g6'), Move.from_uci('g7h6'), Move.from_uci('h7g6')]
