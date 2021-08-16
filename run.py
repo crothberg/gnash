@@ -1,13 +1,10 @@
 import os
-
-os.environ['STOCKFISH_EXECUTABLE'] = os.path.dirname(os.path.realpath(__file__)) + '/stockfish/stockfish_14_x64_avx2.exe'
-
 import traceback, sys
 from reconchess import load_player, play_local_game, LocalGame
 import reconchess
 import chess
-from bots.gnash_bot import GnashBot
-from bots.trout_bot import TroutBot
+from gnash_bot import GnashBot
+from reconchess.bots.trout_bot import TroutBot
 
 SECONDS_PER_PLAYER = 900
 

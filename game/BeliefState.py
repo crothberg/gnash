@@ -2,6 +2,7 @@ from collections import defaultdict
 from strategy import select_sense
 from strategy.select_move import *
 from utils.util import normalize, simulate_sense
+from reconchess.utilities import revise_move
 import chess
 
 class BeliefState:
@@ -71,10 +72,10 @@ class BeliefState:
         for fen, totalProb in self.myBoardDist.items():
             board = chess.Board(fen)
             #TODO: fix this, I think it should move out of the loop
-            moveProbs = get_move_dist({fen: 1}, numSamples=20)
+            moveProbs = get_move_dist({fen: 1}, maxSamples=50)
             for move, prob in moveProbs.items():
                 board = chess.Board(fen)
-                if ((move not in board.pseudo_legal_moves)
+                if ((move not in get_all_moves(board))
                  or (capturedMyPiece and move.to_square != captureSquare)):
                         continue
                 board.push(move)
@@ -105,7 +106,7 @@ class BeliefState:
         for fen in self.myBoardDist:
             board = chess.Board(fen)
             if ((capturedOppPiece and not board.is_attacked_by(self.color, captureSquare))
-                or (requestedMove != takenMove and requestedMove in list(board.pseudo_legal_moves))
+                or (requestedMove != takenMove and requestedMove in board.pseudo_legal_moves)
                 or (takenMove not in list(board.pseudo_legal_moves) + [None])):
                 impossibleBoards.add(board.fen())
                     
@@ -119,7 +120,7 @@ class BeliefState:
         #     for fen, fenProb in oppBoardDist.items():
         #         board = chess.Board(fen)
         #         #TODO Fix this, I think it should move out of the loop or something
-        #         believedMoveProbs = get_move_dist({board.fen(): 1}, numSamples=20)
+        #         believedMoveProbs = get_move_dist({board.fen(): 1}, maxSamples=50)
         #         for move, moveProb in believedMoveProbs.items():
         #             board = chess.Board(fen)
         #             board.push(move)
@@ -133,7 +134,7 @@ class BeliefState:
         for fen in self.myBoardDist:
             oldBoard = chess.Board(fen)
             newBoard = oldBoard
-            newBoard.push(takenMove)
+            newBoard.push(takenMove if takenMove is not None else chess.Move.null())
             newFen = newBoard.fen()
             newBoardDist[newFen] += self.myBoardDist[fen]
             # newOppBoardDists[newFen] = self.oppBoardDists[fen]

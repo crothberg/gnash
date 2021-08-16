@@ -14,6 +14,7 @@ class GnashBot(Player):
         self.color = None
         self.board = None
         self.beliefState = None
+        self.firstTurn = True
 
     def handle_game_start(self, color: Color, board: chess.Board, opponent_name: str):
         self.color = color
@@ -25,6 +26,9 @@ class GnashBot(Player):
         # self.beliefState.display()
 
     def handle_opponent_move_result(self, captured_my_piece: bool, capture_square: Optional[Square]):
+        if self.firstTurn and self.color:
+            self.firstTurn = False
+            return
         print('\nOpponent sensed.')
         # print('Updating belief state...')
         self.beliefState.opp_sense_result_update()
