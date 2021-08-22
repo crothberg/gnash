@@ -7,6 +7,7 @@ from strategy.select_sense import select_sense
 from strategy.select_move import select_move
 import chess.engine
 import types
+import time
 
 class GnashBot(Player):
 
@@ -15,6 +16,7 @@ class GnashBot(Player):
         self.board = None
         self.beliefState = None
         self.firstTurn = True
+        self.moveStartTime = None
 
     def handle_game_start(self, color: Color, board: chess.Board, opponent_name: str):
         self.color = color
@@ -26,12 +28,10 @@ class GnashBot(Player):
         # self.beliefState.display()
 
     def handle_opponent_move_result(self, captured_my_piece: bool, capture_square: Optional[Square]):
+        self.moveStartTime = time.time()
         if self.firstTurn and self.color:
             self.firstTurn = False
             return
-        print('\nOpponent sensed.')
-        # print('Updating belief state...')
-        self.beliefState.opp_sense_result_update()
         # print('Our updated belief state is now as follows:')
         # self.beliefState.display()
         # print()
@@ -42,7 +42,7 @@ class GnashBot(Player):
         else:
             print('No pieces captured.')
         # print('Updating belief state...')
-        self.beliefState.opp_move_result_update(captured_my_piece, capture_square)
+        self.beliefState.opp_move_result_update(captured_my_piece, capture_square, maxTime=5)
         # print('Our updated belief state is now as follows:')
         # self.beliefState.display()
         pass
@@ -62,18 +62,23 @@ class GnashBot(Player):
         self.beliefState.display()
 
     def choose_move(self, move_actions: List[chess.Move], seconds_left: float) -> Optional[chess.Move]:
-        print('MOVE ACTIONS:', move_actions)
-        move = select_move(self.beliefState)
+        move = select_move(self.beliefState, maxTime=9)
         print("MOVE:", move)
+        if move == chess.Move.null():
+            return None
         return move
 
     def handle_move_result(self, requested_move: Optional[chess.Move], taken_move: Optional[chess.Move],
                            captured_opponent_piece: bool, capture_square: Optional[Square]):
         print('\nRequested move', requested_move, ', took move', taken_move)
+        print('\nTime elapsed', time.time() - self.moveStartTime)
         # print('Updating belief state...')
         self.beliefState.our_move_result_update(requested_move, taken_move, captured_opponent_piece, capture_square)
         # print('Our updated belief state is now as follows:')
         # self.beliefState.display()
+        print('\nOpponent sensed.')
+        # print('Updating belief state...')
+        self.beliefState.opp_sense_result_update()
 
     def handle_game_end(self, winner_color: Optional[Color], win_reason: Optional[WinReason],
                         game_history: GameHistory):

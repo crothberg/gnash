@@ -53,7 +53,7 @@ class BeliefState:
                         impossibleBoards.add(board.fen())
             BeliefState._remove_impossible_boards(boardDist, impossibleBoards)
 
-    def opp_move_result_update(self, capturedMyPiece, captureSquare):
+    def opp_move_result_update(self, capturedMyPiece, captureSquare, maxTime):
         #Calculate impossible boards
         impossibleBoards = set()
         if capturedMyPiece:
@@ -72,7 +72,7 @@ class BeliefState:
         for fen, totalProb in self.myBoardDist.items():
             board = chess.Board(fen)
             #TODO: fix this, I think it should move out of the loop
-            moveProbs = get_move_dist({fen: 1}, maxSamples=50)
+            moveProbs = get_move_dist({fen: 1}, maxTime=maxTime*totalProb)
             for move, prob in moveProbs.items():
                 board = chess.Board(fen)
                 if ((move not in get_all_moves(board))
@@ -91,7 +91,7 @@ class BeliefState:
                 # newOppBoardDists[newFen] = normalize(newOppBoardDist)
 
         # self.oppBoardDists = newOppBoardDists
-        self.myBoardDist = normalize(newMyBoardDist)
+        self.myBoardDist = normalize(newMyBoardDist, adjust=True)
         if abs(1 - sum(self.myBoardDist.values())) >= .0001:
             print(self.myBoardDist)
             print(sum(self.myBoardDist.values()))

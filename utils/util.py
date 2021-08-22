@@ -1,8 +1,10 @@
 import chess
 import random
 from reconchess.utilities import *
-def normalize(dist):
+def normalize(dist, adjust = False):
     total = sum(dist.values())
+    if adjust and total == 0:
+        total = len(dist)
     for e in dist:
         dist[e] /= total
     return dist
@@ -35,5 +37,13 @@ def get_sense_squares(square):
 
 def get_all_moves(board : chess.Board):
     return move_actions(board) + [chess.Move.null()]
+
+def get_psuedo_legal_moves(fens):
+    legalMoves = set()
+    legalMoves.add(chess.Move.null())
+    for fen in fens:
+        board = chess.Board(fen)
+        legalMoves = legalMoves.union(board.pseudo_legal_moves)
+    return legalMoves
 
 GOOD_SENSING_SQUARES = [i*8 + j for i in range(1,6) for j in range(1,6)]
