@@ -38,7 +38,7 @@ def get_sense_squares(square):
 def get_all_moves(board : chess.Board):
     return move_actions(board) + [chess.Move.null()]
 
-def get_psuedo_legal_moves(fens):
+def get_pseudo_legal_moves(fens):
     legalMoves = set()
     legalMoves.add(chess.Move.null())
     for fen in fens:

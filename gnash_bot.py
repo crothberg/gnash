@@ -62,6 +62,7 @@ class GnashBot(Player):
         self.beliefState.display()
 
     def choose_move(self, move_actions: List[chess.Move], seconds_left: float) -> Optional[chess.Move]:
+        print("Choosing move...")
         move = select_move(self.beliefState, maxTime=9)
         print("MOVE:", move)
         if move == chess.Move.null():

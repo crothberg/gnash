@@ -148,7 +148,7 @@ class BeliefState:
     def _remove_impossible_boards(dist, impossibleBoards):
         for board in impossibleBoards:
             del dist[board]
-        normalize(dist)
+        normalize(dist, adjust=True)
 
     def display(self):
         print(f'\tMY BOARD DISTRIBUTION: ({len(self.myBoardDist)})')

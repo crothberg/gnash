@@ -4,13 +4,14 @@ from reconchess import load_player, play_local_game, LocalGame
 import reconchess
 import chess
 from gnash_bot import GnashBot
-from reconchess.bots.trout_bot import TroutBot
+# from reconchess.bots.trout_bot import TroutBot
+from reconchess.bots.random_bot import RandomBot
 
 SECONDS_PER_PLAYER = 900
 
 game = LocalGame(SECONDS_PER_PLAYER)
 
-opponent = TroutBot()
+opponent = RandomBot()# TroutBot()
 gnash = GnashBot()
 
 # opponent.handle_game_start(chess.WHITE, game.board.copy(), 'Trout')
