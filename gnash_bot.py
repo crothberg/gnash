@@ -11,12 +11,13 @@ import time
 
 class GnashBot(Player):
 
-    def __init__(self):
+    def __init__(self, maxMoveTime=15):
         self.color = None
         self.board = None
         self.beliefState = None
         self.firstTurn = True
         self.moveStartTime = None
+        self.maxMoveTime = maxMoveTime
 
     def handle_game_start(self, color: Color, board: chess.Board, opponent_name: str):
         self.color = color
@@ -42,7 +43,7 @@ class GnashBot(Player):
         else:
             print('No pieces captured.')
         # print('Updating belief state...')
-        self.beliefState.opp_move_result_update(captured_my_piece, capture_square, maxTime=5)
+        self.beliefState.opp_move_result_update(captured_my_piece, capture_square, maxTime=self.maxMoveTime*(.4))
         # print('Our updated belief state is now as follows:')
         # self.beliefState.display()
         pass
@@ -62,7 +63,7 @@ class GnashBot(Player):
         self.beliefState.display()
 
     def choose_move(self, move_actions: List[chess.Move], seconds_left: float) -> Optional[chess.Move]:
-        move = select_move(self.beliefState, maxTime=9)
+        move = select_move(self.beliefState, maxTime=self.maxMoveTime*(.6))
         print("MOVE:", move)
         if move == chess.Move.null():
             return None
