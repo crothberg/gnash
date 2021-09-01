@@ -1,0 +1,258 @@
+C:\Users\Carmi\Desktop\Fun Coding Projects\gnash>python run.py
+Game has started.
+
+Opponent moved.
+No pieces captured.
+
+Sensing now...
+
+Sensing move is 19
+
+Sense result is [(26, None), (27, None), (28, None), (18, None), (19, None), (20, None), (10, Piece.from_symbol('P')), (11, Piece.from_symbol('P')), (12, Piece.from_symbol('P'))]
+Updating belief state...
+Our updated belief dist is now as follows:
+        MY BOARD DISTRIBUTION: (13)
+                 rnbqkbnr/pppppppp/8/8/8/1P6/P1PPPPPP/RNBQKBNR b KQkq - 0 1     probability: 0.11420099191090241
+                 rnbqkbnr/pppppppp/8/8/8/5P2/PPPPP1PP/RNBQKBNR b KQkq - 0 1     probability: 0.0056156723102249295
+                 rnbqkbnr/pppppppp/8/8/8/7N/PPPPPPPP/RNBQKB1R b KQkq - 1 1      probability: 0.012189090882397719
+                 rnbqkbnr/pppppppp/8/8/6P1/8/PPPPPP1P/RNBQKBNR b KQkq - 0 1     probability: 2.167884362412295e-05
+                 rnbqkbnr/pppppppp/8/8/8/P7/1PPPPPPP/RNBQKBNR b KQkq - 0 1      probability: 0.10420820608340156
+                 rnbqkbnr/pppppppp/8/8/5P2/8/PPPPP1PP/RNBQKBNR b KQkq - 0 1     probability: 0.046400820021237854
+                 rnbqkbnr/pppppppp/8/8/1P6/8/P1PPPPPP/RNBQKBNR b KQkq - 0 1     probability: 0.08328360449317104
+                 rnbqkbnr/pppppppp/8/8/8/7P/PPPPPPP1/RNBQKBNR b KQkq - 0 1      probability: 0.09401015848077011
+                 rnbqkbnr/pppppppp/8/8/P7/8/1PPPPPPP/RNBQKBNR b KQkq - 0 1      probability: 0.06048152138881676
+                 rnbqkbnr/pppppppp/8/8/8/5N2/PPPPPPPP/RNBQKB1R b KQkq - 1 1     probability: 0.28251236052570583
+                 rnbqkbnr/pppppppp/8/8/7P/8/PPPPPPP1/RNBQKBNR b KQkq - 0 1      probability: 0.029817248787561944
+                 rnbqkbnr/pppppppp/8/8/8/6P1/PPPPPP1P/RNBQKBNR b KQkq - 0 1     probability: 0.15807649378918648
+                 rnbqkbnr/pppppppp/8/8/8/N7/PPPPPPPP/R1BQKBNR b KQkq - 1 1      probability: 0.009182152482999202
+Choosing move...
+MOVE: e7e6
+
+Requested move e7e6 , took move e7e6
+
+Time elapsed 15.117822647094727
+
+Opponent sensed.
+
+Opponent moved.
+No pieces captured.
+
+Sensing now...
+
+Sensing move is 17
+
+Sense result is [(24, None), (25, None), (26, None), (16, Piece.from_symbol('P')), (17, None), (18, None), (8, None), (9, Piece.from_symbol('P')), (10, Piece.from_symbol('P'))]
+Updating belief state...
+Our updated belief dist is now as follows:
+        MY BOARD DISTRIBUTION: (14)
+                 rnbqkbnr/pppp1ppp/4p3/8/8/P4P2/1PPPP1PP/RNBQKBNR b KQkq - 0 2  probability: 0.004893166207620534
+                 rnbqkbnr/pppp1ppp/4p3/8/8/P6N/1PPPPPPP/RNBQKB1R b KQkq - 0 2   probability: 0.006199784645638272
+                 rnbqkbnr/pppp1ppp/4p3/8/6P1/P7/1PPPPP1P/RNBQKBNR b KQkq - 0 2  probability: 0.0038384417513004235
+                 rnbqkbnr/pppp1ppp/4p3/8/4P3/P7/1PPP1PPP/RNBQKBNR b KQkq - 0 2  probability: 0.08266928209675595
+                 rnbqkbnr/pppp1ppp/4p3/8/8/P6N/1PPPPPPP/RNBQKB1R b KQkq - 1 2   probability: 0.007469226093540657
+                 rnbqkbnr/pppp1ppp/4p3/8/8/P3P3/1PPP1PPP/RNBQKBNR b KQkq - 0 2  probability: 0.15016504746017273
+                 rnbqkbnr/pppp1ppp/4p3/8/5P2/P7/1PPPP1PP/RNBQKBNR b KQkq - 0 2  probability: 0.019149437222513607
+                 rnbqkbnr/pppp1ppp/4p3/8/8/P2P4/1PP1PPPP/RNBQKBNR b KQkq - 0 2  probability: 0.04188121875791481
+                 rnbqkbnr/pppp1ppp/4p3/8/8/P6P/1PPPPPP1/RNBQKBNR b KQkq - 0 2   probability: 0.08845389844794194
+                 rnbqkbnr/pppp1ppp/4p3/8/8/P4N2/1PPPPPPP/RNBQKB1R b KQkq - 1 2  probability: 0.11247491229662737
+                 rnbqkbnr/pppp1ppp/4p3/8/3P4/P7/1PP1PPPP/RNBQKBNR b KQkq - 0 2  probability: 0.11600671853649612
+                 rnbqkbnr/pppp1ppp/4p3/8/7P/P7/1PPPPPP1/RNBQKBNR b KQkq - 0 2   probability: 0.027201827282852063
+                 rnbqkbnr/pppp1ppp/4p3/8/8/P5P1/1PPPPP1P/RNBQKBNR b KQkq - 0 2  probability: 0.15622410799926895
+                 rnbqkbnr/pppp1ppp/4p3/8/8/P4N2/1PPPPPPP/RNBQKB1R b KQkq - 0 2  probability: 0.18337293120135664
+Choosing move...
+MOVE: c7c5
+
+Requested move c7c5 , took move c7c5
+
+Time elapsed 17.56611466407776
+
+Opponent sensed.
+
+Opponent moved.
+No pieces captured.
+
+Sensing now...
+
+Sensing move is 13
+
+Sense result is [(20, None), (21, None), (22, None), (12, Piece.from_symbol('P')), (13, Piece.from_symbol('P')), (14, Piece.from_symbol('P')), (4, Piece.from_symbol('K')), (5, Piece.from_symbol('B')), (6, None)]
+Updating belief state...
+Our updated belief dist is now as follows:
+        MY BOARD DISTRIBUTION: (17)
+                 rnbqkbnr/pp1p1ppp/4p3/2p5/8/P6N/RPPPPPPP/1NBQKB1R b Kkq - 1 3  probability: 0.04922205917047016
+                 rnbqkbnr/pp1p1ppp/4p3/2p5/2P5/P6N/1P1PPPPP/RNBQKB1R b KQkq - 0 3       probability: 0.04922205917047016
+                 rnbqkbnr/pp1p1ppp/4p3/2p5/8/PP5N/2PPPPPP/RNBQKB1R b KQkq - 0 3         probability: 0.04922205917047016
+                 rnbqkbnr/pp1p1ppp/4p3/2p5/5N2/P7/1PPPPPPP/RNBQKB1R b KQkq - 1 3        probability: 0.04922205917047016
+                 rnbqkbnr/pp1p1ppp/4p3/2p5/P7/7N/1PPPPPPP/RNBQKB1R b KQkq - 0 3         probability: 0.04922205917047016
+                 rnbqkbnr/pp1p1ppp/4p3/2p5/8/P1N4N/1PPPPPPP/R1BQKB1R b KQkq - 1 3       probability: 0.04922205917047016
+                 rnbqkbnr/pp1p1ppp/4p3/2p5/8/P1P4N/1P1PPPPP/RNBQKB1R b KQkq - 0 3       probability: 0.04922205917047016
+                 rnbqkbnr/pp1p1ppp/4p3/2p5/8/P2P3N/1PP1PPPP/RNBQKB1R b KQkq - 0 3       probability: 0.04922205917047016
+                 rnbqkbnr/pp1p1ppp/4p3/2p5/1P6/P6N/2PPPPPP/RNBQKB1R b KQkq - 0 3        probability: 0.04922205917047016
+                 rnbqkbnr/pp1p1ppp/4p3/2p3N1/8/P7/1PPPPPPP/RNBQKB1R b KQkq - 1 3        probability: 0.04922205917047016
+                 rnbqkbnr/pp1p1ppp/4p3/2p5/3P4/P6N/1PP1PPPP/RNBQKB1R b KQkq - 0 3       probability: 0.04922205917047016
+                 rnbqkbnr/pp1p1ppp/4p3/2p5/8/P2P3N/1PP1PPPP/RNBQKB1R b KQkq - 1 3       probability: 0.02578019147717328
+                 rnbqkbnr/pp1p1ppp/4p3/2p5/7N/P7/1PPPPPPP/RNBQKB1R b KQkq - 1 3         probability: 0.0
+                 rnbqkbnr/pp1p1ppp/4p3/2p5/3N4/P7/1PPPPPPP/RNBQKB1R b KQkq - 1 3        probability: 0.0
+                 rnbqkbnr/pp1p1ppp/4p3/2p1N3/8/P7/1PPPPPPP/RNBQKB1R b KQkq - 1 3        probability: 0.41113293744994367
+                 rnbqkbnr/pp1p1ppp/4p3/2p5/3P4/P6N/1PP1PPPP/RNBQKB1R b KQkq - 1 3       probability: 0.00011593810404609571
+                 rnbqkbnr/pp1p1ppp/4p3/2p5/7P/P6N/1PPPPPP1/RNBQKB1R b KQkq - 1 3        probability: 0.02152828209366538
+Choosing move...
+MOVE: g8f6
+
+Requested move g8f6 , took move g8f6
+
+Time elapsed 17.991371393203735
+
+Opponent sensed.
+
+Opponent moved.
+No pieces captured.
+
+Sensing now...
+
+Sensing move is 19
+
+Sense result is [(26, None), (27, None), (28, None), (18, None), (19, None), (20, None), (10, Piece.from_symbol('P')), (11, Piece.from_symbol('P')), (12, Piece.from_symbol('P'))]
+Updating belief state...
+Our updated belief dist is now as follows:
+        MY BOARD DISTRIBUTION: (121)
+                 rnbqkb1r/pp1p1ppp/4pn2/2p5/8/P6N/1PPPPPPP/RNBQKB1R b Kkq - 3 4         probability: 0.002053995642896975
+                 rnbqkb1r/pp1p1ppp/4pn2/2p5/8/P7/RPPPPPPP/1NBQKBNR b Kkq - 3 4  probability: 0.002053995642896975
+                 rnbqkb1r/pp1p1ppp/4pn2/2p5/8/PP5N/R1PPPPPP/1NBQKB1R b Kkq - 0 4        probability: 0.002053995642896975
+                 rnbqkb1r/pp1p1ppp/4pn2/2p5/8/P4P1N/RPPPP1PP/1NBQKB1R b Kkq - 0 4       probability: 0.002053995642896975
+                 rnbqkb1r/pp1p1ppp/4pn2/2p5/5N2/P7/RPPPPPPP/1NBQKB1R b Kkq - 3 4        probability: 0.0037656586786444534
+                 rnbqkb1r/pp1p1ppp/4pn2/2p5/8/P6N/RPPPPPPP/1NBQKBR1 b kq - 3 4  probability: 0.002053995642896975
+                 rnbqkb1r/pp1p1ppp/4pn2/2p5/P7/7N/RPPPPPPP/1NBQKB1R b Kkq - 0 4         probability: 0.002053995642896975
+                 rnbqkb1r/pp1p1ppp/4pn2/2p5/6P1/P6N/RPPPPP1P/1NBQKB1R b Kkq - 0 4       probability: 0.002053995642896975
+                 rnbqkb1r/pp1p1ppp/4pn2/2p5/5P2/P6N/RPPPP1PP/1NBQKB1R b Kkq - 0 4       probability: 0.002053995642896975
+                 rnbqkb1r/pp1p1ppp/4pn2/2p5/1P6/P6N/R1PPPPPP/1NBQKB1R b Kkq - 0 4       probability: 0.002053995642896975
+                 rnbqkb1r/pp1p1ppp/4pn2/2p3N1/8/P7/RPPPPPPP/1NBQKB1R b Kkq - 3 4        probability: 0.0036971921572145536
+                 rnbqkb1r/pp1p1ppp/4pn2/2p5/8/P5PN/RPPPPP1P/1NBQKB1R b Kkq - 0 4        probability: 0.002053995642896975
+                 rnbqkb1r/pp1p1ppp/4pn2/2p5/8/PP5N/R1PPPPPP/1NBQKB1R b Kkq - 2 4        probability: 0.002053995642896975
+                 rnbqkb1r/pp1p1ppp/4pn2/2p5/8/PP5N/1BPPPPPP/RN1QKB1R b KQkq - 2 4       probability: 0.002053995642896975
+                 rnbqkb1r/pp1p1ppp/4pn2/2p5/8/PP6/2PPPPPP/RNBQKBNR b KQkq - 2 4         probability: 0.002053995642896975
+                 rnbqkb1r/pp1p1ppp/4pn2/2p5/8/PP3P1N/2PPP1PP/RNBQKB1R b KQkq - 0 4      probability: 0.002053995642896975
+                 rnbqkb1r/pp1p1ppp/4pn2/2p5/5N2/PP6/2PPPPPP/RNBQKB1R b KQkq - 2 4       probability: 0.002053995642896975
+                 rnbqkb1r/pp1p1ppp/4pn2/2p5/8/PP5N/2PPPPPP/RNBQKBR1 b Qkq - 2 4         probability: 0.002053995642896975
+                 rnbqkb1r/pp1p1ppp/4pn2/2p5/1P6/P6N/2PPPPPP/RNBQKB1R b KQkq - 0 4       probability: 0.002053995642896975
+                 rnbqkb1r/pp1p1ppp/4pn2/2p5/P7/1P5N/2PPPPPP/RNBQKB1R b KQkq - 0 4       probability: 0.00392126440916695
+                 rnbqkb1r/pp1p1ppp/4pn2/2p5/6P1/PP5N/2PPPP1P/RNBQKB1R b KQkq - 0 4      probability: 0.002053995642896975
+                 rnbqkb1r/pp1p1ppp/4pn2/2p5/5P2/PP5N/2PPP1PP/RNBQKB1R b KQkq - 0 4      probability: 0.002053995642896975
+                 rnbqkb1r/pp1p1ppp/4pn2/2p3N1/8/PP6/2PPPPPP/RNBQKB1R b KQkq - 2 4       probability: 0.002053995642896975
+                 rnbqkb1r/pp1p1ppp/4pn2/2p5/8/PP4PN/2PPPP1P/RNBQKB1R b KQkq - 0 4       probability: 0.002053995642896975
+                 rnbqkb1r/pp1p1ppp/4pn2/2p5/5N2/PP6/2PPPPPP/RNBQKB1R b KQkq - 0 4       probability: 0.001711663035747479
+                 rnbqkb1r/pp1p1ppp/4pn2/2p4N/8/P7/1PPPPPPP/RNBQKB1R b KQkq - 3 4        probability: 0.001711663035747479
+                 rnbqkb1r/pp1p1ppp/4pn2/2p5/5N2/P4P2/1PPPP1PP/RNBQKB1R b KQkq - 0 4     probability: 0.001711663035747479
+                 rnbqkb1r/pp1p1ppp/4pn2/2p5/5N2/P7/1PPPPPPP/RNBQKBR1 b Qkq - 3 4        probability: 0.001711663035747479
+                 rnbqkb1r/pp1p1ppp/4pn2/2p5/P4N2/8/1PPPPPPP/RNBQKB1R b KQkq - 0 4       probability: 0.001711663035747479
+                 rnbqkb1r/pp1p1ppp/4pn2/2p5/5NP1/P7/1PPPPP1P/RNBQKB1R b KQkq - 0 4      probability: 0.001711663035747479
+                 rnbqkb1r/pp1p1ppp/4Nn2/2p5/8/P7/1PPPPPPP/RNBQKB1R b KQkq - 0 4         probability: 0.003354859550065058
+                 rnbqkb1r/pp1p1ppp/4pn2/2p5/1P3N2/P7/2PPPPPP/RNBQKB1R b KQkq - 0 4      probability: 0.001711663035747479
+                 rnbqkb1r/pp1p1ppp/4pn2/2p5/5N2/P6P/1PPPPPP1/RNBQKB1R b KQkq - 0 4      probability: 0.001711663035747479
+                 rnbqkb1r/pp1p1ppp/4pn2/2pN4/8/P7/1PPPPPPP/RNBQKB1R b KQkq - 3 4        probability: 0.001711663035747479
+                 rnbqkb1r/pp1p1ppp/4pn2/2p5/8/P6N/1PPPPPPP/RNBQKB1R b KQkq - 3 4        probability: 0.005066522585812538
+                 rnbqkb1r/pp1p1ppp/4pn2/2p5/5N1P/P7/1PPPPPP1/RNBQKB1R b KQkq - 0 4      probability: 0.001711663035747479
+                 rnbqkb1r/pp1p1ppp/4pn2/2p5/5N2/P5P1/1PPPPP1P/RNBQKB1R b KQkq - 0 4     probability: 0.001711663035747479
+                 rnbqkb1r/pp1p1ppp/4pnN1/2p5/8/P7/1PPPPPPP/RNBQKB1R b KQkq - 3 4        probability: 0.001711663035747479
+                 rnbqkb1r/pp1p1ppp/4pn2/2p5/P7/7N/RPPPPPPP/1NBQKB1R b Kkq - 2 4         probability: 0.0018672687662699757
+                 rnbqkb1r/pp1p1ppp/4pn2/2p5/P7/8/1PPPPPPP/RNBQKBNR b KQkq - 2 4         probability: 0.0018672687662699757
+                 rnbqkb1r/pp1p1ppp/4pn2/2p5/P7/5P1N/1PPPP1PP/RNBQKB1R b KQkq - 0 4      probability: 0.0018672687662699757
+                 rnbqkb1r/pp1p1ppp/4pn2/2p5/P4N2/8/1PPPPPPP/RNBQKB1R b KQkq - 2 4       probability: 0.0018672687662699757
+                 rnbqkb1r/pp1p1ppp/4pn2/2p5/P7/7N/1PPPPPPP/RNBQKBR1 b Qkq - 2 4         probability: 0.0018672687662699757
+                 rnbqkb1r/pp1p1ppp/4pn2/2p5/P5P1/7N/1PPPPP1P/RNBQKB1R b KQkq - 0 4      probability: 0.0018672687662699757
+                 rnbqkb1r/pp1p1ppp/4pn2/2p5/P4P2/7N/1PPPP1PP/RNBQKB1R b KQkq - 0 4      probability: 0.0018672687662699757
+                 rnbqkb1r/pp1p1ppp/4pn2/2p5/P7/R6N/1PPPPPPP/1NBQKB1R b Kkq - 2 4        probability: 0.0018672687662699757
+                 rnbqkb1r/pp1p1ppp/4pn2/P1p5/8/7N/1PPPPPPP/RNBQKB1R b KQkq - 0 4        probability: 0.0018672687662699757
+                 rnbqkb1r/pp1p1ppp/4pn2/2p5/PP6/7N/2PPPPPP/RNBQKB1R b KQkq - 0 4        probability: 0.0038234550928385224
+                 rnbqkb1r/pp1p1ppp/4pn2/2p3N1/P7/8/1PPPPPPP/RNBQKB1R b KQkq - 2 4       probability: 0.0018672687662699757
+                 rnbqkb1r/pp1p1ppp/4pn2/2p5/P7/6PN/1PPPPP1P/RNBQKB1R b KQkq - 0 4       probability: 0.1388003116260682
+                 rnbqkb1r/pp1p1ppp/4pn2/2p5/P7/N6N/1PPPPPPP/R1BQKB1R b KQkq - 2 4       probability: 0.0018672687662699757
+                 rnbqkb1r/pp1p1ppp/4pn2/2pN4/8/P6N/1PPPPPPP/R1BQKB1R b KQkq - 3 4       probability: 0.0017116630357474792
+                 rnbqkb1r/pp1p1ppp/4pn2/2p5/N7/P6N/1PPPPPPP/R1BQKB1R b KQkq - 3 4       probability: 0.0017116630357474792
+                 rnbqkb1r/pp1p1ppp/4pn2/1Np5/8/P6N/1PPPPPPP/R1BQKB1R b KQkq - 3 4       probability: 0.0017116630357474792
+                 rnbqkb1r/pp1p1ppp/4pn2/2p5/8/P6N/NPPPPPPP/R1BQKB1R b KQkq - 3 4        probability: 0.0017116630357474792
+                 rnbqkb1r/pp1p1ppp/4pn2/2p5/1P6/P6N/R1PPPPPP/1NBQKB1R b Kkq - 2 4       probability: 0.0019561863265685465
+                 rnbqkb1r/pp1p1ppp/4pn2/2p5/1P6/P6N/1BPPPPPP/RN1QKB1R b KQkq - 2 4      probability: 0.0019561863265685465
+                 rnbqkb1r/pp1p1ppp/4pn2/2p5/1P6/P7/2PPPPPP/RNBQKBNR b KQkq - 2 4        probability: 0.0019561863265685465
+                 rnbqkb1r/pp1p1ppp/4pn2/2p5/1P6/P4P1N/2PPP1PP/RNBQKB1R b KQkq - 0 4     probability: 0.0019561863265685465
+                 rnbqkb1r/pp1p1ppp/4pn2/1Pp5/8/P6N/2PPPPPP/RNBQKB1R b KQkq - 0 4        probability: 0.0019561863265685465
+                 rnbqkb1r/pp1p1ppp/4pn2/2p5/1P3N2/P7/2PPPPPP/RNBQKB1R b KQkq - 2 4      probability: 0.0019561863265685465
+                 rnbqkb1r/pp1p1ppp/4pn2/2p5/1P6/P6N/2PPPPPP/RNBQKBR1 b Qkq - 2 4        probability: 0.0019561863265685465
+                 rnbqkb1r/pp1p1ppp/4pn2/2p5/1P4P1/P6N/2PPPP1P/RNBQKB1R b KQkq - 0 4     probability: 0.0019561863265685465
+                 rnbqkb1r/pp1p1ppp/4pn2/2p5/1P3P2/P6N/2PPP1PP/RNBQKB1R b KQkq - 0 4     probability: 0.0019561863265685465
+                 rnbqkb1r/pp1p1ppp/4pn2/2P5/8/P6N/2PPPPPP/RNBQKB1R b KQkq - 0 4         probability: 0.1388892291863668
+                 rnbqkb1r/pp1p1ppp/4pn2/2p3N1/1P6/P7/2PPPPPP/RNBQKB1R b KQkq - 2 4      probability: 0.0019561863265685465
+                 rnbqkb1r/pp1p1ppp/4pn2/2p5/1P6/P5PN/2PPPP1P/RNBQKB1R b KQkq - 0 4      probability: 0.0019561863265685465
+                 rnbqkb1r/pp1p1Npp/4pn2/2p5/8/P7/1PPPPPPP/RNBQKB1R b KQkq - 0 4         probability: 0.0016431965143175787
+                 rnbqkb1r/pp1p1ppN/4pn2/2p5/8/P7/1PPPPPPP/RNBQKB1R b KQkq - 0 4         probability: 0.0016431965143175787
+                 rnbqkb1r/pp1p1ppp/4pn2/2p5/8/P4N2/1PPPPPPP/RNBQKB1R b KQkq - 3 4       probability: 0.1241866402860425
+                 rnbqkb1r/pp1p1ppp/4pn2/2p3N1/8/PP6/2PPPPPP/RNBQKB1R b KQkq - 0 4       probability: 0.0016431965143175787
+                 rnbqkb1r/pp1p1ppp/4pn2/2p3N1/8/P4P2/1PPPP1PP/RNBQKB1R b KQkq - 0 4     probability: 0.0016431965143175787
+                 rnbqkb1r/pp1p1ppp/4pn2/2p3N1/8/P7/1PPPPPPP/RNBQKBR1 b Qkq - 3 4        probability: 0.0016431965143175787
+                 rnbqkb1r/pp1p1ppp/4pn2/2p3N1/P7/8/1PPPPPPP/RNBQKB1R b KQkq - 0 4       probability: 0.0016431965143175787
+                 rnbqkb1r/pp1p1ppp/4pn2/2p3N1/6P1/P7/1PPPPP1P/RNBQKB1R b KQkq - 0 4     probability: 0.0016431965143175787
+                 rnbqkb1r/pp1p1ppp/4pn2/2p3N1/5P2/P7/1PPPP1PP/RNBQKB1R b KQkq - 0 4     probability: 0.0016431965143175787
+                 rnbqkb1r/pp1p1ppp/4pn2/2p3N1/1P6/P7/2PPPPPP/RNBQKB1R b KQkq - 0 4      probability: 0.0016431965143175787
+                 rnbqkb1r/pp1p1ppp/4pn2/2p3N1/8/P6P/1PPPPPP1/RNBQKB1R b KQkq - 0 4      probability: 0.0016431965143175787
+                 rnbqkb1r/pp1p1ppp/4pn2/2p3N1/7P/P7/1PPPPPP1/RNBQKB1R b KQkq - 0 4      probability: 0.0016431965143175787
+                 rnbqkb1r/pp1p1ppp/4pn2/2p3N1/8/P5P1/1PPPPP1P/RNBQKB1R b KQkq - 0 4     probability: 0.0016431965143175787
+                 rnbqkb1r/pp1p1ppp/4pn2/2p5/7N/P7/RPPPPPPP/1NBQKB1R b Kkq - 3 4         probability: 0.0
+                 rnbqkb1r/pp1p1ppp/4pn2/2p2N2/8/P7/1PPPPPPP/RNBQKB1R b KQkq - 3 4       probability: 0.0
+                 rnbqkb1r/pp1p1ppp/4pn2/2p5/7N/PP6/2PPPPPP/RNBQKB1R b KQkq - 0 4        probability: 0.0
+                 rnbqkb1r/pp1p1ppp/4pn2/2p5/7N/P4P2/1PPPP1PP/RNBQKB1R b KQkq - 0 4      probability: 0.0
+                 rnbqkb1r/pp1p1ppp/4pn2/2p5/7N/P7/1PPPPPPP/RNBQKBR1 b Qkq - 3 4         probability: 0.0
+                 rnbqkb1r/pp1p1ppp/4pn2/2p5/P6N/8/1PPPPPPP/RNBQKB1R b KQkq - 0 4        probability: 0.0
+                 rnbqkb1r/pp1p1ppp/4pn2/2p5/6PN/P7/1PPPPP1P/RNBQKB1R b KQkq - 0 4       probability: 0.0
+                 rnbqkb1r/pp1p1ppp/4pn2/2p5/5P1N/P7/1PPPP1PP/RNBQKB1R b KQkq - 0 4      probability: 0.0
+                 rnbqkb1r/pp1p1ppp/4pn2/2p5/1P5N/P7/2PPPPPP/RNBQKB1R b KQkq - 0 4       probability: 0.0
+                 rnbqkb1r/pp1p1ppp/4pn2/2p5/7N/P6P/1PPPPPP1/RNBQKB1R b KQkq - 0 4       probability: 0.0
+                 rnbqkb1r/pp1p1ppp/4pn2/2p5/7N/P5P1/1PPPPP1P/RNBQKB1R b KQkq - 0 4      probability: 0.0
+                 rnbqkb1r/pp1p1ppp/4pn2/1Np5/8/P7/1PPPPPPP/RNBQKB1R b KQkq - 3 4        probability: 0.0
+                 rnbqkb1r/pp1p1ppp/4pn2/2p5/8/PN6/1PPPPPPP/RNBQKB1R b KQkq - 3 4        probability: 0.0
+                 rnbqkb1r/pp1p1ppp/2N1pn2/2p5/8/P7/1PPPPPPP/RNBQKB1R b KQkq - 3 4       probability: 0.0
+                 rnbqkb1r/pp1p1ppp/4pn2/2p1N3/8/P7/RPPPPPPP/1NBQKB1R b Kkq - 3 4        probability: 1.3306981150289318e-05
+                 rnbqkb1r/pp1p1ppp/4pn2/2p5/6N1/P7/1PPPPPPP/RNBQKB1R b KQkq - 3 4       probability: 0.0
+                 rnbqkb1r/pp1N1ppp/4pn2/2p5/8/P7/1PPPPPPP/RNBQKB1R b KQkq - 0 4         probability: 0.0
+                 rnbqkb1r/pp1p1ppp/4pn2/2p1N3/8/PP6/2PPPPPP/RNBQKB1R b KQkq - 0 4       probability: 0.2342675868765165
+                 rnbqkb1r/pp1p1ppp/4pn2/2p1N3/8/P4P2/1PPPP1PP/RNBQKB1R b KQkq - 0 4     probability: 2.0643932025597547e-06
+                 rnbqkb1r/pp1p1ppp/4pn2/2p1N3/8/P7/1PPPPPPP/RNBQKBR1 b Qkq - 3 4        probability: 5.532819041033565e-06
+                 rnbqkb1r/pp1p1ppp/4pn2/2p1N3/P7/8/1PPPPPPP/RNBQKB1R b KQkq - 0 4       probability: 0.008121598855586961
+                 rnbqkb1r/pp1p1ppp/4pn2/2p1N3/6P1/P7/1PPPPP1P/RNBQKB1R b KQkq - 0 4     probability: 1.0888612557574967e-08
+                 rnbqkb1r/pp1p1ppp/4pn2/2p1N3/5P2/P7/1PPPP1PP/RNBQKB1R b KQkq - 0 4     probability: 0.06429695025642865
+                 rnbqkb1r/pp1p1ppp/4pn2/2p1N3/1P6/P7/2PPPPPP/RNBQKB1R b KQkq - 0 4      probability: 0.0012116912484516518
+                 rnbqkb1r/pp1p1ppp/4pn2/2p1N3/8/P6P/1PPPPPP1/RNBQKB1R b KQkq - 0 4      probability: 0.05039853911709896
+                 rnbqkb1r/pp1p1ppp/4pn2/2p1N3/7P/P7/1PPPPPP1/RNBQKB1R b KQkq - 0 4      probability: 2.1306512906132082e-05
+                 rnbqkb1r/pp1p1ppp/4pn2/2p1N3/8/P5P1/1PPPPP1P/RNBQKB1R b KQkq - 0 4     probability: 0.07242575847630232
+                 rnbqkb1r/pp1p1ppp/4pn2/2p5/7P/P6N/RPPPPPP1/1NBQKB1R b Kkq - 3 4        probability: 0.0008166884811894917
+                 rnbqkb1r/pp1p1ppp/4pn2/2p5/7P/P7/1PPPPPP1/RNBQKBNR b KQkq - 3 4        probability: 0.0008166884811894917
+                 rnbqkb1r/pp1p1ppp/4pn2/2p5/7P/P6N/1PPPPPPR/RNBQKB2 b Qkq - 3 4         probability: 0.0008166884811894917
+                 rnbqkb1r/pp1p1ppp/4pn2/2p5/7P/PP5N/2PPPPP1/RNBQKB1R b KQkq - 0 4       probability: 0.0008166884811894917
+                 rnbqkb1r/pp1p1ppp/4pn2/2p5/7P/P4P1N/1PPPP1P1/RNBQKB1R b KQkq - 0 4     probability: 0.0008166884811894917
+                 rnbqkb1r/pp1p1ppp/4pn2/2p5/5N1P/P7/1PPPPPP1/RNBQKB1R b KQkq - 3 4      probability: 0.0008166884811894917
+                 rnbqkb1r/pp1p1ppp/4pn2/2p5/7P/P6N/1PPPPPP1/RNBQKBR1 b Qkq - 3 4        probability: 0.0008166884811894917
+                 rnbqkb1r/pp1p1ppp/4pn2/2p5/P6P/7N/1PPPPPP1/RNBQKB1R b KQkq - 0 4       probability: 0.0008166884811894917
+                 rnbqkb1r/pp1p1ppp/4pn2/2p5/6PP/P6N/1PPPPP2/RNBQKB1R b KQkq - 0 4       probability: 0.0008166884811894917
+                 rnbqkb1r/pp1p1ppp/4pn2/2p5/5P1P/P6N/1PPPP1P1/RNBQKB1R b KQkq - 0 4     probability: 0.0008166884811894917
+                 rnbqkb1r/pp1p1ppp/4pn2/2p5/1P5P/P6N/2PPPPP1/RNBQKB1R b KQkq - 0 4      probability: 0.0008166884811894917
+                 rnbqkb1r/pp1p1ppp/4pn2/2p3N1/7P/P7/1PPPPPP1/RNBQKB1R b KQkq - 3 4      probability: 0.0008166884811894917
+                 rnbqkb1r/pp1p1ppp/4pn2/2p4P/8/P6N/1PPPPPP1/RNBQKB1R b KQkq - 0 4       probability: 0.0008166884811894917
+                 rnbqkb1r/pp1p1ppp/4pn2/2p5/7P/P5PN/1PPPPP2/RNBQKB1R b KQkq - 0 4       probability: 0.0008166884811894917
+Choosing move...
+IMPOSSIBLE MOVE SET: {Move.from_uci('c8d7'), Move.from_uci('e8f7'), Move.from_uci('0000'), Move.from_uci('f6d7'), Move.from_uci('h8h7'), Move.from_uci('d7e6'), Move.from_uci('f6h7'), Move.from_uci('e8d7'), Move.from_uci('b8d7'), Move.from_uci('d8d7'), Move.from_uci('f7e6'), Move.from_uci('f8c5')}
+Traceback (most recent call last):
+  File "run.py", line 43, in <module>
+    winner_color, win_reason, history = play_local_game(opponent, gnash, game=game)
+  File "C:\Users\Carmi\AppData\Local\Programs\Python\Python38\lib\site-packages\reconchess\play.py", line 37, in play_local_game
+    play_turn(game, players[game.turn], end_turn_last=True)
+  File "C:\Users\Carmi\AppData\Local\Programs\Python\Python38\lib\site-packages\reconchess\play.py", line 89, in play_turn
+  File "C:\Users\Carmi\AppData\Local\Programs\Python\Python38\lib\site-packages\reconchess\play.py", line 141, in play_move
+    move = player.choose_move(move_actions, game.get_seconds_left())
+  File "C:\Users\Carmi\Desktop\Fun Coding Projects\gnash\gnash_bot.py", line 66, in choose_move
+    move = select_move(self.beliefState, maxTime=9)
+  File "C:\Users\Carmi\Desktop\Fun Coding Projects\gnash\strategy\select_move.py", line 28, in select_move
+    return select_move_from_dist(beliefState.myBoardDist, maxTime)
+  File "C:\Users\Carmi\Desktop\Fun Coding Projects\gnash\strategy\select_move.py", line 31, in select_move_from_dist
+    move = sample(get_move_dist(boardDist, maxTime))
+  File "C:\Users\Carmi\Desktop\Fun Coding Projects\gnash\strategy\select_move.py", line 72, in get_move_dist
+    assert False
+AssertionError
