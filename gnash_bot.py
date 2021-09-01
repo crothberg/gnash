@@ -60,6 +60,8 @@ class GnashBot(Player):
         self.beliefState.sense_update(sense_result)
         print('Our updated belief dist is now as follows:')
         self.beliefState.display()
+        bestKey = max(self.beliefState.myBoardDist, key=self.beliefState.myBoardDist.get)
+        print(bestKey, self.beliefState.myBoardDist[bestKey])
 
     def choose_move(self, move_actions: List[chess.Move], seconds_left: float) -> Optional[chess.Move]:
         print("Choosing move...")
@@ -83,4 +85,4 @@ class GnashBot(Player):
 
     def handle_game_end(self, winner_color: Optional[Color], win_reason: Optional[WinReason],
                         game_history: GameHistory):
-        pass
+        print(f"{winner_color} won by {win_reason}!")

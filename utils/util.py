@@ -5,8 +5,11 @@ def normalize(dist, adjust = False):
     total = sum(dist.values())
     if adjust and total == 0:
         total = len(dist)
-    for e in dist:
-        dist[e] /= total
+        for e in dist:
+            dist[e] = 1/total
+    else:
+        for e in dist:
+            dist[e] /= total
     return dist
 
 def sample(dist):
@@ -35,9 +38,11 @@ def get_sense_squares(square):
                     senseSquares.add(chess.square(file + delta_file, rank + delta_rank))
     return senseSquares
 
+#Gets all moves that are reconchess-legal on a chess board
 def get_all_moves(board : chess.Board):
     return move_actions(board) + [chess.Move.null()]
 
+#Gets all moves that are actually legal (plus null) on at least one chessboard in fens
 def get_pseudo_legal_moves(fens):
     legalMoves = set()
     legalMoves.add(chess.Move.null())

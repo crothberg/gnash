@@ -23,6 +23,7 @@ if not os.path.exists(stockfish_path):
 
 # initialize the stockfish engine
 engine = chess.engine.SimpleEngine.popen_uci(stockfish_path, setpgrp=True)
+print('Stockfish engine initialized..')
 
 def select_move(beliefState, maxTime) -> Move:
     return select_move_from_dist(beliefState.myBoardDist, maxTime)
@@ -35,31 +36,31 @@ def get_move_dist(boardDist, maxTime):
     legalMoves = get_pseudo_legal_moves(boardDist)
     if maxTime <= .1:
         return {move: 1/len(legalMoves) for move in legalMoves}
-    if maxTime <= 10:
+    if maxTime <= .5:
         return get_quick_move_dist(boardDist, maxTime)
-    legalMoveScores = {move: [0, 0] for move in legalMoves} #[tries, averageScore]
+    legalMoveScores = {move: [0.001, 0] for move in legalMoves} #[tries, averageScore]
     startTime = time.time()
     totalTriesSoFar = 0
     while time.time() - startTime < maxTime:
         sampleFen = sample(boardDist)
         if totalTriesSoFar == 0:
-            testMoves = legalMoves
+            testMoves = set(get_all_moves(chess.Board(sampleFen))).intersection(legalMoveScores)
         else:
-            testMoves = choose_n_moves(legalMoveScores, 10, 1, totalTriesSoFar)
+            testMoves = choose_n_moves(legalMoveScores, 10, 1, totalTriesSoFar, sampleFen)
             time.sleep(.1)
             stockfishMove = get_stockfish_move(sampleFen, maxTime=.1)
             if stockfishMove not in testMoves:
                 testMoves += [stockfishMove]
         for move in testMoves:
             sampleBoard = chess.Board(sampleFen)
+            assert move in get_all_moves(sampleBoard)
             timesSampled, avgScore = legalMoveScores[move]
             totalScore = timesSampled*avgScore
-            try:
-                revisedMove = revise_move(sampleBoard, move) if move not in {chess.Move.null(), None} else chess.Move.null()
-            except:
-                print('SAMPLE BOARD:',sampleBoard)
-                print('MOVE',move)
-                print(move not in {chess.Move.null(), None})
+            revisedMove = revise_move(sampleBoard, move) if move != chess.Move.null() else chess.Move.null()
+            revisedMove = revisedMove or chess.Move.null()
+            # print('SAMPLE BOARD:\n',sampleBoard)
+            # print('MOVE',move)
+            # print(move not in {chess.Move.null(), None})
             sampleBoard.push(revisedMove if revisedMove is not None else chess.Move.null())
             newBoardScore = evaluate_board(sampleBoard)
             legalMoveScores[move][0] += 1
@@ -67,9 +68,10 @@ def get_move_dist(boardDist, maxTime):
             totalTriesSoFar += 1
     probs = normalize({move: legalMoveScores[move][1]**8 for move in legalMoves}, adjust=True)
     impossible_move_set = set(probs.keys()).difference(set(move_actions(chess.Board(list(boardDist.keys())[0]))))
-    if len(impossible_move_set) > 1 and len(boardDist) < 10:
-        print('IMPOSSIBLE MOVE SET:', impossible_move_set)
-        assert False
+    # It should be okay for the opponent to attempt an impossible move, no? Why do we raise this error?
+    # if len(impossible_move_set) > 1:# and len(boardDist) < 10:
+    #     print('IMPOSSIBLE MOVE SET:', impossible_move_set)
+    #     assert False
     return probs
 
 def get_quick_move_dist(boardDist, maxTime):
@@ -83,8 +85,11 @@ def get_quick_move_dist(boardDist, maxTime):
         probs[get_stockfish_move(board, timePerMove)] += 1
     return normalize(probs)
 
-def choose_n_moves(moveScores, n, c, totalTriesSoFar):
-    sorted_moves = sorted(moveScores, key=lambda move: moveScores[move][1] + c*(math.log(totalTriesSoFar)/moveScores[move][0])**.5, reverse=True)
+def choose_n_moves(moveScores, n, c, totalTriesSoFar, fen):
+    board = chess.Board(fen)
+    allMoves = get_all_moves(board)
+    # moveScores = {k: v for (k, v) in moveScores.items() if k in legalMoves}
+    sorted_moves = sorted(moveScores, key=lambda move: -100 if move not in allMoves else (moveScores[move][1] + c*(math.log(totalTriesSoFar)/moveScores[move][0])**.5), reverse=True)
     return sorted_moves[:n]
 
 def get_stockfish_move(fen : str, maxTime) -> Move:
