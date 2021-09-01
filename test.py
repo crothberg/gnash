@@ -9,10 +9,11 @@ from gnash_bot import GnashBot
 from game.BeliefState import BeliefState
 from strategy.select_move import get_move_dist
 
-with open('bd.txt') as infile:
-    json_string = re.sub(r'\n {3,}', ', "', infile.read().strip())
-    json_string = '{"' + re.sub(r' +probability: ', '": ', json_string) + '}'
-board_dist = json.loads(json_string)
+# with open('bd.txt') as infile:
+#     json_string = re.sub(r'\n {3,}', ', "', infile.read().strip())
+#     json_string = '{"' + re.sub(r' +probability: ', '": ', json_string) + '}'
+# board_dist = json.loads(json_string)
+board_dist = {'rnb1kbnr/pp1ppppp/Bqp5/8/3PP3/8/PPP2PPP/RNBQK1NR b KQkq - 2 3': 1}
 
 gnash = GnashBot()
 gnash.color = chess.BLACK
@@ -21,7 +22,7 @@ gnash.beliefState = BeliefState(gnash.color)
 gnash.beliefState.myBoardDist = board_dist
 
 board_dist_orig = board_dist
-gnash.handle_move_result(requested_move=chess.Move.from_uci('d8c7'), taken_move=chess.Move.from_uci('d8c7'), captured_opponent_piece=False, capture_square=None)
+gnash.handle_move_result(requested_move=chess.Move.from_uci('b6b4'), taken_move=chess.Move.from_uci('b6b4'), captured_opponent_piece=False, capture_square=None)
 board_dist_moved = gnash.beliefState.myBoardDist
 gnash.beliefState.display()
 print('MOVE DIST')

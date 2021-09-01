@@ -1,18 +1,4 @@
-  rnbqkbnr/pp1ppppp/2p5/8/4P3/7N/PPPP1PPP/RNBQKB1R b KQkq - 1 2  probability: 0.0007698145725690997
-                 rnbqkbnr/pp1ppppp/2p5/8/4P3/5N2/PPPP1PPP/RNBQKB1R b KQkq - 1 2         probability: 0.1861321426733047
-                 rnbqkbnr/pp1ppppp/B1p5/8/4P3/8/PPPP1PPP/RNBQK1NR b KQkq - 1 2  probability: 0.0
-                 rnbqkbnr/pp1ppppp/2p5/1B6/4P3/8/PPPP1PPP/RNBQK1NR b KQkq - 1 2         probability: 0.0
-                 rnbqkbnr/pp1ppppp/2p5/7Q/4P3/8/PPPP1PPP/RNB1KBNR b KQkq - 1 2  probability: 0.0071866997827615435
-                 rnbqkbnr/pp1ppppp/2p5/8/4P1Q1/8/PPPP1PPP/RNB1KBNR b KQkq - 1 2         probability: 0.028360728601879347
-                 rnbqkbnr/pp1ppppp/2p5/8/4P3/5Q2/PPPP1PPP/RNB1KBNR b KQkq - 1 2         probability: 0.06380050532172535
-                 rnbqkbnr/pp1ppppp/2p5/8/4P3/N7/PPPP1PPP/R1BQKBNR b KQkq - 1 2  probability: 0.05914297225766937
-                 rnbqkbnr/pp1ppppp/2p5/8/4P3/7P/PPPP1PP1/RNBQKBNR b KQkq - 0 2  probability: 0.10121214215716826
-                 rnbqkbnr/pp1ppppp/2p5/8/4P3/6P1/PPPP1P1P/RNBQKBNR b KQkq - 0 2         probability: 0.06505916846836662
-                 rnbqkbnr/pp1ppppp/2p5/8/4P3/5P2/PPPP2PP/RNBQKBNR b KQkq - 0 2  probability: 0.07011990127387537
-                 rnbqkbnr/pp1ppppp/2p5/8/4P3/1P6/P1PP1PPP/RNBQKBNR b KQkq - 0 2         probability: 0.05749506832668631
-                 rnbqkbnr/pp1ppppp/2p5/8/4P3/P7/1PPP1PPP/RNBQKBNR b KQkq - 0 2  probability: 0.09125731829813934
-                 rnbqkbnr/pp1ppppp/2p5/8/4P2P/8/PPPP1PP1/RNBQKBNR b KQkq - 0 2  probability: 0.08533651737023255
-                 rnbqkbnr/pp1ppppp/2p5/8/4P1P1/8/PPPP1P1P/RNBQKBNR b KQkq - 0 2         probability: 0.011208159798268665
-                 rnbqkbnr/pp1ppppp/2p5/8/4PP2/8/PPPP2PP/RNBQKBNR b KQkq - 0 2   probability: 0.09347511151023964
-                 rnbqkbnr/pp1ppppp/2p5/8/1P2P3/8/P1PP1PPP/RNBQKBNR b KQkq - 0 2         probability: 0.0014065377458986137
-                 rnbqkbnr/pp1ppppp/2p5/8/P3P3/8/1PPP1PPP/RNBQKBNR b KQkq - 0 2  probability: 0.07803721184121541
+rnb1kbnr/pp1ppppp/Bqp5/8/3PP3/8/PPP2PPP/RNBQK1NR b KQkq - 2 3  probability: 0.0
+                 rnb1kbnr/pp1ppppp/1qp5/1B6/3PP3/8/PPP2PPP/RNBQK1NR b KQkq - 2 3        probability: 0.0
+                 rnb1kbnr/pp1ppppp/1qp5/8/2BPP3/8/PPP2PPP/RNBQK1NR b KQkq - 2 3         probability: 0.8322095735564184
+                 rnb1kbnr/pp1ppppp/1qp5/8/3PP3/3B4/PPP2PPP/RNBQK1NR b KQkq - 2 3        probability: 0.16779042644358164

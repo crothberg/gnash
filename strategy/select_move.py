@@ -22,7 +22,8 @@ if not os.path.exists(stockfish_path):
     raise ValueError('No stockfish executable found at "{}"'.format(stockfish_path))
 
 # initialize the stockfish engine
-engine = chess.engine.SimpleEngine.popen_uci(stockfish_path, setpgrp=True)
+moving_engine = chess.engine.SimpleEngine.popen_uci(stockfish_path, setpgrp=True)
+analysis_engine = chess.engine.SimpleEngine.popen_uci(stockfish_path, setpgrp=True)
 print('Stockfish engine initialized..')
 
 def select_move(beliefState, maxTime) -> Move:
@@ -47,7 +48,6 @@ def get_move_dist(boardDist, maxTime):
             testMoves = set(get_all_moves(chess.Board(sampleFen))).intersection(legalMoveScores)
         else:
             testMoves = choose_n_moves(legalMoveScores, 10, 1, totalTriesSoFar, sampleFen)
-            time.sleep(.1)
             stockfishMove = get_stockfish_move(sampleFen, maxTime=.1)
             if stockfishMove not in testMoves:
                 testMoves += [stockfishMove]
@@ -58,16 +58,16 @@ def get_move_dist(boardDist, maxTime):
             totalScore = timesSampled*avgScore
             revisedMove = revise_move(sampleBoard, move) if move != chess.Move.null() else chess.Move.null()
             revisedMove = revisedMove or chess.Move.null()
-            # print('SAMPLE BOARD:\n',sampleBoard)
-            # print('MOVE',move)
-            # print(move not in {chess.Move.null(), None})
+        #     # print('SAMPLE BOARD:\n',sampleBoard)
+        #     # print('MOVE',move)
+        #     # print(move not in {chess.Move.null(), None})
             sampleBoard.push(revisedMove if revisedMove is not None else chess.Move.null())
             newBoardScore = evaluate_board(sampleBoard)
             legalMoveScores[move][0] += 1
             legalMoveScores[move][1] = (totalScore + newBoardScore)/legalMoveScores[move][0]
             totalTriesSoFar += 1
     probs = normalize({move: legalMoveScores[move][1]**8 for move in legalMoves}, adjust=True)
-    impossible_move_set = set(probs.keys()).difference(set(move_actions(chess.Board(list(boardDist.keys())[0]))))
+    # impossible_move_set = set(probs.keys()).difference(set(move_actions(chess.Board(list(boardDist.keys())[0]))))
     # It should be okay for the opponent to attempt an impossible move, no? Why do we raise this error?
     # if len(impossible_move_set) > 1:# and len(boardDist) < 10:
     #     print('IMPOSSIBLE MOVE SET:', impossible_move_set)
@@ -105,7 +105,7 @@ def get_stockfish_move(fen : str, maxTime) -> Move:
     while tries<1:
         # try:
         tries += 1
-        move = engine.play(board, chess.engine.Limit(time=maxTime)).move
+        move = moving_engine.play(board, chess.engine.Limit(time=maxTime)).move
             # print(type(engine))
             # engine.quit()
             # exit()
@@ -124,7 +124,7 @@ def evaluate_board(board: chess.Board):
         return 1
     baseScore = 0
     try:
-        baseScore += engine.analyse(board, chess.engine.Limit(time=0.05))['score'].pov(not board.turn).wdl().expectation()
+        baseScore += analysis_engine.analyse(board, chess.engine.Limit(time=0.05))['score'].pov(not board.turn).wdl().expectation()
     except:
         baseScore += random.random()
     if board.is_check():
