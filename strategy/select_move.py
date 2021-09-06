@@ -43,8 +43,14 @@ def get_move_dist_helper(move, sampleFen, legalMoveScores, totalTriesSoFar, engi
     totalScore = timesSampled*avgScore
     revisedMove = revise_move(sampleBoard, move) if move != chess.Move.null() else chess.Move.null()
     revisedMove = revisedMove or chess.Move.null()
+    isCapture = sampleBoard.piece_at(revisedMove.to_square) != None if revisedMove != chess.Move.null() else False
     sampleBoard.push(revisedMove if revisedMove is not None else chess.Move.null())
     newBoardScore = evaluate_board(sampleBoard, engine)
+    #Minor penalty for taking a piece (and revealing information)
+    if isCapture:
+        newBoardScore = max(0, newBoardScore - .05)
+    if sampleBoard.is_check() and not isCapture:
+        newBoardScore = min(1, newBoardScore + .2)
     legalMoveScores[move][0] += 1
     legalMoveScores[move][1] = (totalScore + newBoardScore)/legalMoveScores[move][0]
 def get_move_dist(boardDist, maxTime):
@@ -61,7 +67,7 @@ def get_move_dist(boardDist, maxTime):
         if totalTriesSoFar == 0:
             testMoves = set(get_all_moves(chess.Board(sampleFen))).intersection(legalMoveScores)
         else:
-            testMoves = choose_n_moves(legalMoveScores, 50, 1, totalTriesSoFar, sampleFen)
+            testMoves = choose_n_moves(legalMoveScores, 20, 1, totalTriesSoFar, sampleFen)
             stockfishMove = get_stockfish_move(sampleFen, maxTime=.1, engine=moving_engines[0])
             if stockfishMove not in testMoves:
                 testMoves += [stockfishMove]
@@ -85,12 +91,10 @@ def get_quick_move_dist(boardDist, maxTime):
     def update_probs(board, engine):
         probs[get_stockfish_move(board, timePerMove, engine)] += 1
     startTime = time.time()
-    # while time.time()-startTime < maxTime:
-    sampleBoards = sample(boardDist, numSamples)
-    gevent.joinall([gevent.spawn(update_probs, board, engine) for board, engine in zip(sampleBoards, moving_engines)])
-    print(time.time()-startTime, numSamples)
-        #  for board in sampleBoards:
-        #     update_probs(board)
+    while time.time()-startTime < maxTime:
+        sampleBoards = sample(boardDist, numSamples)
+        gevent.joinall([gevent.spawn(update_probs, board, engine) for board, engine in zip(sampleBoards, moving_engines)])
+    # print(time.time()-startTime, numSamples)
     return normalize(probs)
 
 def choose_n_moves(moveScores, n, c, totalTriesSoFar, fen):
@@ -112,6 +116,7 @@ def get_stockfish_move(fen : str, maxTime, engine) -> Move:
     move = engine.play(board, chess.engine.Limit(time=maxTime)).move
     return move
 
+##TODO: Find a better way to avoid leaving our king in check
 #return score in [0, 1]
 def evaluate_board(board: chess.Board, engine):
     board.clear_stack()
@@ -120,6 +125,4 @@ def evaluate_board(board: chess.Board, engine):
     if (board.attackers(board.turn, board.king(not board.turn))):
         return 0
     baseScore = engine.analyse(board, chess.engine.Limit(time=0.05))['score'].pov(not board.turn).wdl().expectation()
-    if board.is_check():
-        baseScore += .2
     return min(1, baseScore)

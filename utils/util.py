@@ -2,6 +2,7 @@ import chess
 import random
 from reconchess.utilities import *
 
+##TODO: Add a way to make the zeros nonzero
 def normalize(dist, adjust = False):
     total = sum(dist.values())
     if adjust and total == 0:

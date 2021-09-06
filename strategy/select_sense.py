@@ -13,6 +13,7 @@ def boardDist_to_squareDist(boardDist: BoardDist) -> SquareDist:
             squareDist[square][board.piece_at(square)] += prob
     return squareDist
 
+##TODO: Parallelize this
 def select_sense(boardDist: BoardDist) -> SenseMove:
     squareDist = boardDist_to_squareDist(boardDist)
     sense_options = {} # dict where each key is a sense move, each value the amount of uncertainty we would remove by that move
