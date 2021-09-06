@@ -1,6 +1,7 @@
 import chess
 import random
 from reconchess.utilities import *
+
 def normalize(dist, adjust = False):
     total = sum(dist.values())
     if adjust and total == 0:
@@ -12,8 +13,11 @@ def normalize(dist, adjust = False):
             dist[e] /= total
     return dist
 
-def sample(dist):
-    return random.choices(list(dist.keys()), weights=list(dist.values()), k=1)[0]
+def sample(dist, k=1):
+    if k==1:
+        return random.choices(list(dist.keys()), weights=list(dist.values()), k=1)[0]
+    else:
+        return random.choices(list(dist.keys()), weights=list(dist.values()), k=k)
 
 # Produce a sense result from a hypothetical true board and a sense square
 def simulate_sense(board, square):  # copied (with modifications) from LocalGame
