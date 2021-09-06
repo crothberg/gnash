@@ -3,6 +3,8 @@ import random
 from reconchess.utilities import *
 
 ##TODO: Add a way to make the zeros nonzero
+##TODO: If all the boards are zero, get the new 
+## probabilities based on how bad they are for us
 def normalize(dist, adjust = False):
     total = sum(dist.values())
     if adjust and total == 0:
