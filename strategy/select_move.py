@@ -118,7 +118,7 @@ def evaluate_board(board: chess.Board, engine):
     if board.king(board.turn) == None:
         return 1
     if (board.attackers(board.turn, board.king(not board.turn))):
-        return -1
+        return 0
     baseScore = engine.analyse(board, chess.engine.Limit(time=0.05))['score'].pov(not board.turn).wdl().expectation()
     if board.is_check():
         baseScore += .2
