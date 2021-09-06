@@ -81,7 +81,6 @@ def get_quick_move_dist(boardDist, maxTime):
     probs = {move: (numSamples*.3)/len(legalMoves) for move in legalMoves}
     for _ in range(numSamples):
         board = sample(boardDist)
-        time.sleep(.05)
         probs[get_stockfish_move(board, timePerMove)] += 1
     return normalize(probs)
 
@@ -101,20 +100,7 @@ def get_stockfish_move(fen : str, maxTime) -> Move:
         if enemy_king_attackers:
             attacker_square = enemy_king_attackers.pop()
             return chess.Move(attacker_square, enemy_king_square)
-    tries = 0
-    while tries<1:
-        # try:
-        tries += 1
-        move = moving_engine.play(board, chess.engine.Limit(time=maxTime)).move
-            # print(type(engine))
-            # engine.quit()
-            # exit()
-        # except:
-            # print('HERE', type(engine))
-            # engine.quit()
-            # print("Stockfish broke. Trying again...")
-            # engine = chess.engine.SimpleEngine.popen_uci(stockfish_path, setpgrp=True, timeout=1)
-    # return chess.Move.null()
+    move = moving_engine.play(board, chess.engine.Limit(time=maxTime)).move
     return move
 
 #return score in [0, 1]
@@ -122,11 +108,9 @@ def evaluate_board(board: chess.Board):
     board.clear_stack()
     if board.king(board.turn) == None:
         return 1
-    baseScore = 0
-    try:
-        baseScore += analysis_engine.analyse(board, chess.engine.Limit(time=0.05))['score'].pov(not board.turn).wdl().expectation()
-    except:
-        baseScore += random.random()
+    if (board.attackers(board.turn, board.king(not board.turn))):
+        return -1
+    baseScore = analysis_engine.analyse(board, chess.engine.Limit(time=0.05))['score'].pov(not board.turn).wdl().expectation()
     if board.is_check():
         baseScore += .2
     return min(1, baseScore)

@@ -86,4 +86,5 @@ class GnashBot(Player):
 
     def handle_game_end(self, winner_color: Optional[Color], win_reason: Optional[WinReason],
                         game_history: GameHistory):
+        game_history.save('games/game.json')
         print(f"{winner_color} won by {win_reason}!")
