@@ -58,4 +58,4 @@ def get_pseudo_legal_moves(fens):
         legalMoves = legalMoves.union(board.pseudo_legal_moves)
     return legalMoves
 
-GOOD_SENSING_SQUARES = [i*8 + j for i in range(1,6) for j in range(1,6)]
+GOOD_SENSING_SQUARES = [i*8 + j for i in range(1,7) for j in range(1,7)]
