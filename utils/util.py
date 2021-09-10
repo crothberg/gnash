@@ -1,6 +1,36 @@
 import chess
+import chess.engine
 import random
+from reconchess.history import Turn
 from reconchess.utilities import *
+import os
+import gevent
+import time
+
+os.environ['STOCKFISH_EXECUTABLE'] = os.path.dirname(os.path.realpath(__file__)) + '/../stockfish/stockfish_14_x64_avx2.exe'
+STOCKFISH_ENV_VAR = 'STOCKFISH_EXECUTABLE'
+
+# make sure stockfish environment variable exists
+if STOCKFISH_ENV_VAR not in os.environ:
+    raise KeyError(
+        'Gnash requires an environment variable called "{}" pointing to the Stockfish executable'.format(
+            STOCKFISH_ENV_VAR))
+
+# make sure there is actually a file
+stockfish_path = os.environ[STOCKFISH_ENV_VAR]
+if not os.path.exists(stockfish_path):
+    raise ValueError('No stockfish executable found at "{}"'.format(stockfish_path))
+
+# initialize the stockfish engine
+NUM_ENGINES=5
+moving_engines = [chess.engine.SimpleEngine.popen_uci(stockfish_path, setpgrp=True) for _ in range(NUM_ENGINES)]
+analysis_engines = [chess.engine.SimpleEngine.popen_uci(stockfish_path, setpgrp=True) for _ in range(NUM_ENGINES)]
+extra_engines = [chess.engine.SimpleEngine.popen_uci(stockfish_path, setpgrp=True) for _ in range(NUM_ENGINES)]
+print('Stockfish engines initialized..')
+
+def chunks(lst, n):
+    for i in range(0, len(lst), n):
+        yield lst[i:i+n]
 
 ##TODO: Add a way to make the zeros nonzero
 ##TODO: If all the boards are zero, get the new 
@@ -15,6 +45,25 @@ def normalize(dist, adjust = False):
         for e in dist:
             dist[e] /= total
     return dist
+
+def normalize_board_dist_helper(fen, dist, engine):
+    try:
+        dist[fen] = (1 - evaluate_board_to_play(chess.Board(fen), engine, time=.03))**7
+    except:
+        dist[fen] = random.random()
+def normalize_board_dist(dist):
+    if sum(dist.values()) == 0:
+    # if True:
+        # print(dist)
+        print(f"adjusting dist of size {len(dist)}...")
+        t0 = time.time()
+        # input("Here. Hit any key to continue")
+        for chunk in chunks(list(dist.keys()), NUM_ENGINES):
+            gevent.joinall([gevent.spawn(normalize_board_dist_helper, fen, dist, engine) for fen, engine in zip(chunk, extra_engines)])
+        # print(dist)
+        print(f"Completed after {time.time()-t0} seconds")
+        # input("Completed. Hit any key to continue.")
+    return normalize(dist, adjust=True)
 
 def sample(dist, k=1):
     if k==1:
@@ -59,3 +108,33 @@ def get_pseudo_legal_moves(fens):
     return legalMoves
 
 GOOD_SENSING_SQUARES = [i*8 + j for i in range(1,7) for j in range(1,7)]
+
+##TODO: Find a better way to avoid leaving our king in check
+# Score of the person whose position it is NOT
+# return score in [0,1]
+def evaluate_board(board: chess.Board, engine):
+    color = board.turn
+    board.clear_stack()
+    board.turn = color
+    if board.king(board.turn) == None:
+        return 1
+    if (board.attackers(board.turn, board.king(not board.turn))):
+        return 0
+    baseScore = engine.analyse(board, chess.engine.Limit(time=0.05))['score'].pov(not board.turn).score(mate_score=1000)
+    score = max(-1, min(1, baseScore/1000))
+    score += (1-score)/2
+    return score
+#Score from the position of the person whose turn it is
+def evaluate_board_to_play(board: chess.Board, engine, time=0.05):
+    color = board.turn
+    board.clear_stack()
+    board.turn = color
+    if (board.attackers(board.turn, board.king(not board.turn))):
+        return 1
+    baseScore = engine.analyse(board, chess.engine.Limit(time))['score'].pov(board.turn).score(mate_score=1000)
+    # if (not color): baseScore *= -1
+    score = max(-1, min(1, baseScore/1000))
+    score += (1-score)/2
+    if (board.attackers(not board.turn, board.king(board.turn))):
+        score = max(0, score-.15)
+    return score

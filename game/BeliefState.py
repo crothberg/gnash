@@ -38,8 +38,10 @@ class BeliefState:
         gevent.joinall([gevent.spawn(BeliefState.sense_update_helper, fen, senseResult, impossibleBoards) for fen in self.myBoardDist])
         #Remove impossible board views
         BeliefState._remove_impossible_boards(self.myBoardDist, impossibleBoards)
+        for board in impossibleBoards:
+            del self.oppBoardDists[board]
 
-    def opp_sense_result_update_helper(fen, boardDist):
+    def opp_sense_result_update_helper(self, fen, boardDist):
         board = chess.Board(fen)
         senseSquare = select_sense.select_sense(boardDist)
         senseResult = simulate_sense(board, senseSquare)
@@ -51,14 +53,12 @@ class BeliefState:
                     impossibleBoards.add(board.fen())
         BeliefState._remove_impossible_boards(boardDist, impossibleBoards)
     def opp_sense_result_update(self):
-        gevent.joinall([gevent.spawn(BeliefState.opp_sense_result_update_helper, fen, boardDist) for fen, boardDist in self.oppBoardDists.items()])
+        gevent.joinall([gevent.spawn(BeliefState.opp_sense_result_update_helper, self, fen, boardDist) for fen, boardDist in self.oppBoardDists.items()])
 
-    def opp_move_result_update_helper(fen, boardProb, moveProbs, newMyBoardDist, capturedMyPiece, captureSquare):
+    def opp_move_result_update_helper(fen, timeShare, boardProb, newMyBoardDist, oldOppBoardDists, newOppBoardDists, capturedMyPiece, captureSquare):
         board = chess.Board(fen)
-        for move in get_all_moves(board):
-            if move not in moveProbs:
-                continue
-            moveProb = moveProbs[move]
+        moveProbs = get_move_dist(oldOppBoardDists[fen], maxTime=timeShare)
+        for move, moveProb in moveProbs.items():
             board = chess.Board(fen)
             revisedMove = revise_move(board, move) if move != chess.Move.null() else chess.Move.null()
             revisedMove = revisedMove or chess.Move.null()
@@ -68,14 +68,14 @@ class BeliefState:
             board.push(revisedMove)
             newFen = board.fen()
             newMyBoardDist[newFen] += moveProb*boardProb
-            # newOppBoardDist = defaultdict(float)
-            # oppBoardDist = self.oppBoardDists[fen]
-            # for fen2, totalProb2 in oppBoardDist.items():
-            #     board = chess.Board(fen2)
-            #     board.push(move)
-            #     newFen2 = board.fen()
-            #     newOppBoardDist[newFen2] += moveProbs[move]*totalProb2
-            # newOppBoardDists[newFen] = normalize(newOppBoardDist)
+            newOppBoardDist = defaultdict(float)
+            oppBoardDist = oldOppBoardDists[fen]
+            for fen2, totalProb2 in oppBoardDist.items():
+                board = chess.Board(fen2)
+                board.push(move)
+                newFen2 = board.fen()
+                newOppBoardDist[newFen2] += moveProbs[move]*totalProb2
+            newOppBoardDists[newFen] = normalize(newOppBoardDist, adjust=True)
     def opp_move_result_update(self, capturedMyPiece, captureSquare, maxTime):
         #Calculate impossible boards
         impossibleBoards = set()
@@ -86,87 +86,23 @@ class BeliefState:
                     impossibleBoards.add(board.fen())
         #Remove impossible board views
         BeliefState._remove_impossible_boards(self.myBoardDist, impossibleBoards)
+        for board in impossibleBoards:
+            del self.oppBoardDists[board]
         
         newMyBoardDist = defaultdict(float)
-        # newOppBoardDists = dict()
-        print("Getting move dist after opponent move result with maxTime =", maxTime, '...')
-        startGetMoveDist = time.time()
-        #Note: we should really be getting the move dist for each opp dist right before the inner for loop
-        moveProbs = get_move_dist(self.myBoardDist, maxTime=maxTime)
-        print("Completed after", time.time()-startGetMoveDist, "seconds.")
-        startUpdateTime = time.time()
-        print(f"Updating boards with {len(self.myBoardDist)} boards and {len(moveProbs)} moves...")
-        gevent.joinall([gevent.spawn(BeliefState.opp_move_result_update_helper, fen, boardProb, moveProbs, newMyBoardDist, capturedMyPiece, captureSquare) for fen, boardProb in self.myBoardDist.items()])
-        print(f"Completed after {time.time()-startUpdateTime} seconds")
-        # self.oppBoardDists = newOppBoardDists
-        self.myBoardDist = normalize(newMyBoardDist, adjust=True)
+        newOppBoardDists = dict()
+        gevent.joinall([gevent.spawn(BeliefState.opp_move_result_update_helper, fen, maxTime*boardProb, boardProb, newMyBoardDist, self.oppBoardDists, newOppBoardDists, capturedMyPiece, captureSquare) for fen, boardProb in self.myBoardDist.items()])
+        # print(f"Completed after {time.time()-startUpdateTime} seconds")
+        self.oppBoardDists = newOppBoardDists
+        self.myBoardDist = normalize_board_dist(newMyBoardDist)
         if abs(1 - sum(self.myBoardDist.values())) >= .0001:
             print(self.myBoardDist)
             print(sum(self.myBoardDist.values()))
             assert False, "board dist values should always sum to 1"
-        # for dist in self.oppBoardDists.values():
-        #     assert abs(1-sum(dist.values())) < .0001
+        for dist in self.oppBoardDists.values():
+            assert abs(1-sum(dist.values())) < .0001
 
-    # ###
-    # #NOTE: We really need to figure this out at some point. This fn
-    # # is much closer to the logic for when we're tracking
-    # # "what they think we think"
-    # ###
-    # def opp_move_result_update(self, capturedMyPiece, captureSquare, maxTime):
-    #     #Calculate impossible boards
-    #     impossibleBoards = set()
-    #     if capturedMyPiece:
-    #         for fen in self.myBoardDist:
-    #             board = chess.Board(fen)
-    #             if not board.is_attacked_by(not self.color, captureSquare):
-    #                 impossibleBoards.add(board.fen())
-    #     #Remove impossible board views
-    #     BeliefState._remove_impossible_boards(self.myBoardDist, impossibleBoards)
-        
-    #     newMyBoardDist = defaultdict(float)
-    #     # newOppBoardDists = dict()
-    #     print("Getting move dist after opponent move result with maxTime =", maxTime, '...')
-    #     startGetMoveDist = time.time()
-    #     #Note: we should really be getting the move dist for each opp dist right before the inner for loop
-    #     moveProbs = get_move_dist(self.myBoardDist, maxTime=maxTime)
-    #     print("Completed after", time.time()-startGetMoveDist, "seconds.")
-    #     startUpdateTime = time.time()
-    #     print(f"Updating boards with {len(self.myBoardDist)} boards and {len(moveProbs)} moves...")
-    #     for fen, boardProb in self.myBoardDist.items():
-    #         board = chess.Board(fen)
-    #         for move in get_all_moves(board):
-    #             if move not in moveProbs:
-    #                 continue
-    #             moveProb = moveProbs[move]
-    #             board = chess.Board(fen)
-    #             revisedMove = revise_move(board, move) if move != chess.Move.null() else chess.Move.null()
-    #             revisedMove = revisedMove or chess.Move.null()
-    #             if ((capturedMyPiece and revisedMove.to_square != captureSquare)
-    #              or (not capturedMyPiece and board.piece_at(revisedMove.to_square))):
-    #                     continue
-    #             board.push(revisedMove)
-    #             newFen = board.fen()
-    #             newMyBoardDist[newFen] += moveProb*boardProb
-    #             # newOppBoardDist = defaultdict(float)
-    #             # oppBoardDist = self.oppBoardDists[fen]
-    #             # for fen2, totalProb2 in oppBoardDist.items():
-    #             #     board = chess.Board(fen2)
-    #             #     board.push(move)
-    #             #     newFen2 = board.fen()
-    #             #     newOppBoardDist[newFen2] += moveProbs[move]*totalProb2
-    #             # newOppBoardDists[newFen] = normalize(newOppBoardDist)
-    #     print(f"Completed after {time.time()-startUpdateTime} seconds")
-    #     # self.oppBoardDists = newOppBoardDists
-    #     self.myBoardDist = normalize(newMyBoardDist, adjust=True)
-    #     if abs(1 - sum(self.myBoardDist.values())) >= .0001:
-    #         print(self.myBoardDist)
-    #         print(sum(self.myBoardDist.values()))
-    #         assert False, "board dist values should always sum to 1"
-    #     # for dist in self.oppBoardDists.values():
-    #     #     assert abs(1-sum(dist.values())) < .0001
-
-
-    def our_move_result_update(self, requestedMove, takenMove, capturedOppPiece, captureSquare):
+    def our_move_result_update(self, requestedMove, takenMove, capturedOppPiece, captureSquare, maxTime):
         #Calculate impossible boards
         impossibleBoards = set()
         for fen in self.myBoardDist:
@@ -178,34 +114,42 @@ class BeliefState:
                     
         #Remove impossible board views
         BeliefState._remove_impossible_boards(self.myBoardDist, impossibleBoards)
-        # for board in impossibleBoards:
-        #     del self.oppBoardDists[board]
+        for board in impossibleBoards:
+            del self.oppBoardDists[board]
 
-        # for oldFen, oppBoardDist in self.oppBoardDists.items():
-        #     newOppBoardDist = defaultdict(float)
-        #     for fen, fenProb in oppBoardDist.items():
-        #         board = chess.Board(fen)
-        #         #TODO Fix this, I think it should move out of the loop or something
-        #         believedMoveProbs = get_move_dist({board.fen(): 1}, maxSamples=50)
-        #         for move, moveProb in believedMoveProbs.items():
-        #             board = chess.Board(fen)
-        #             board.push(move)
-        #             newFen = board.fen()
-        #             newOppBoardDist[newFen] += believedMoveProbs[move]*fenProb
-        #     self.oppBoardDists[oldFen] = normalize(newOppBoardDist)
+        for oldFen, oppBoardDist in self.oppBoardDists.items():
+            prob = self.myBoardDist[oldFen]
+            newOppBoardDist = defaultdict(float)
+            believedMoveProbs = get_move_dist(oppBoardDist, maxTime=maxTime*prob)
+            for fen, fenProb in oppBoardDist.items():
+                board = chess.Board(fen)
+                allMoves = get_all_moves(board)
+                for move, moveProb in believedMoveProbs.items():
+                    if move not in allMoves:
+                        continue
+                    board = chess.Board(fen)
+                    revisedMove = revise_move(board, move) if move != chess.Move.null() else chess.Move.null()
+                    revisedMove = revisedMove or chess.Move.null()
+                    if ((capturedOppPiece and revisedMove.to_square != captureSquare)
+                        or (not capturedOppPiece and board.piece_at(revisedMove.to_square))):
+                        continue
+                    board.push(revisedMove)
+                    newFen = board.fen()
+                    newOppBoardDist[newFen] += moveProb*fenProb
+            self.oppBoardDists[oldFen] = normalize(newOppBoardDist, adjust=True)
 
         #Update myBoardDist keys based on taken move
         newBoardDist = defaultdict(float)
-        # newOppBoardDists = dict()
+        newOppBoardDists = dict()
         for fen in self.myBoardDist:
             oldBoard = chess.Board(fen)
             newBoard = oldBoard
             newBoard.push(takenMove if takenMove is not None else chess.Move.null())
             newFen = newBoard.fen()
             newBoardDist[newFen] += self.myBoardDist[fen]
-            # newOppBoardDists[newFen] = self.oppBoardDists[fen]
+            newOppBoardDists[newFen] = self.oppBoardDists[fen]
         self.myBoardDist = newBoardDist
-        # self.oppBoardDists = newOppBoardDists
+        self.oppBoardDists = newOppBoardDists
         if abs(1 - sum(self.myBoardDist.values())) >= .0001:
             print(self.myBoardDist)
             print(sum(self.myBoardDist.values()))

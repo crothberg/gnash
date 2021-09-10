@@ -5,6 +5,7 @@ import random
 
 #A fast bot for just in case
 ##TODO: Improve this bot (maybe a better version of trout?)
+##note: trout breaks if it thinks it took the king (even if there was no capture)
 class HelperBot():
     def __init__(self):
         self.bot = TroutBot()

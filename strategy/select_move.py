@@ -9,25 +9,6 @@ import time
 
 import gevent
 
-os.environ['STOCKFISH_EXECUTABLE'] = os.path.dirname(os.path.realpath(__file__)) + '/../stockfish/stockfish_14_x64_avx2.exe'
-STOCKFISH_ENV_VAR = 'STOCKFISH_EXECUTABLE'
-
-# make sure stockfish environment variable exists
-if STOCKFISH_ENV_VAR not in os.environ:
-    raise KeyError(
-        'Gnash requires an environment variable called "{}" pointing to the Stockfish executable'.format(
-            STOCKFISH_ENV_VAR))
-
-# make sure there is actually a file
-stockfish_path = os.environ[STOCKFISH_ENV_VAR]
-if not os.path.exists(stockfish_path):
-    raise ValueError('No stockfish executable found at "{}"'.format(stockfish_path))
-
-# initialize the stockfish engine
-moving_engines = [chess.engine.SimpleEngine.popen_uci(stockfish_path, setpgrp=True) for _ in range(5)]
-analysis_engines = [chess.engine.SimpleEngine.popen_uci(stockfish_path, setpgrp=True) for _ in range(5)]
-print('Stockfish engines initialized..')
-
 def select_move(beliefState, maxTime) -> Move:
     return select_move_from_dist(beliefState.myBoardDist, maxTime)
 
@@ -36,7 +17,7 @@ def select_move_from_dist(boardDist, maxTime):
     return move
 
 
-def get_move_dist_helper(move, sampleFen, legalMoveScores, totalTriesSoFar, engine):
+def get_move_dist_helper(move, sampleFen, legalMoveScores, engine):
     sampleBoard = chess.Board(sampleFen)
     assert move in get_all_moves(sampleBoard)
     timesSampled, avgScore = legalMoveScores[move]
@@ -67,35 +48,37 @@ def get_move_dist(boardDist, maxTime):
         if totalTriesSoFar == 0:
             testMoves = set(get_all_moves(chess.Board(sampleFen))).intersection(legalMoveScores)
         else:
-            testMoves = choose_n_moves(legalMoveScores, 20, 1, totalTriesSoFar, sampleFen)
+            testMoves = choose_n_moves(legalMoveScores, NUM_ENGINES, 1, totalTriesSoFar, sampleFen)
             stockfishMove = get_stockfish_move(sampleFen, maxTime=.1, engine=moving_engines[0])
             if stockfishMove not in testMoves:
                 testMoves += [stockfishMove]
-        gevent.joinall([gevent.spawn(get_move_dist_helper, move, sampleFen, legalMoveScores, totalTriesSoFar, engine) for (move, engine) in zip(testMoves, analysis_engines)])
+        gevent.joinall([gevent.spawn(get_move_dist_helper, move, sampleFen, legalMoveScores, engine) for (move, engine) in zip(testMoves, analysis_engines)])
         totalTriesSoFar += len(testMoves)
-    print(totalTriesSoFar, totalTriesSoFar/(time.time()-startTime), time.time()-startTime)
+    # print(totalTriesSoFar, totalTriesSoFar/(time.time()-startTime), time.time()-startTime)
+    # print("Raw scores:")
+    # print(legalMoveScores)
     probs = normalize({move: legalMoveScores[move][1]**8 for move in legalMoves}, adjust=True)
     # impossible_move_set = set(probs.keys()).difference(set(move_actions(chess.Board(list(boardDist.keys())[0]))))
     # It should be okay for the opponent to attempt an impossible move, no? Why do we raise this error?
     # if len(impossible_move_set) > 1:# and len(boardDist) < 10:
     #     print('IMPOSSIBLE MOVE SET:', impossible_move_set)
     #     assert False
+    # print(probs)
     return probs
 
 def get_quick_move_dist(boardDist, maxTime):
     legalMoves = get_pseudo_legal_moves(boardDist)
     timePerMove = .1
-    numSamples = math.ceil(maxTime/timePerMove)
-    probs = {move: (numSamples*.3)/len(legalMoves) for move in legalMoves}
+    probs = {move: (.2*(maxTime/timePerMove))/len(legalMoves) for move in legalMoves}
 
     def update_probs(board, engine):
         probs[get_stockfish_move(board, timePerMove, engine)] += 1
     startTime = time.time()
     while time.time()-startTime < maxTime:
-        sampleBoards = sample(boardDist, numSamples)
+        sampleBoards = sample(boardDist, NUM_ENGINES)
         gevent.joinall([gevent.spawn(update_probs, board, engine) for board, engine in zip(sampleBoards, moving_engines)])
     # print(time.time()-startTime, numSamples)
-    return normalize(probs)
+    return normalize(probs, adjust=True)
 
 def choose_n_moves(moveScores, n, c, totalTriesSoFar, fen):
     board = chess.Board(fen)
@@ -115,14 +98,3 @@ def get_stockfish_move(fen : str, maxTime, engine) -> Move:
             return chess.Move(attacker_square, enemy_king_square)
     move = engine.play(board, chess.engine.Limit(time=maxTime)).move
     return move
-
-##TODO: Find a better way to avoid leaving our king in check
-#return score in [0, 1]
-def evaluate_board(board: chess.Board, engine):
-    board.clear_stack()
-    if board.king(board.turn) == None:
-        return 1
-    if (board.attackers(board.turn, board.king(not board.turn))):
-        return 0
-    baseScore = engine.analyse(board, chess.engine.Limit(time=0.05))['score'].pov(not board.turn).wdl().expectation()
-    return min(1, baseScore)
