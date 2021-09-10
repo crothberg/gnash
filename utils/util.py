@@ -36,6 +36,8 @@ def chunks(lst, n):
 ##TODO: If all the boards are zero, get the new 
 ## probabilities based on how bad they are for us
 def normalize(dist, adjust = False):
+    if len(dist) == 0:
+        raise(ValueError)
     total = sum(dist.values())
     if adjust and total == 0:
         total = len(dist)

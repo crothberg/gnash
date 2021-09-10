@@ -14,6 +14,10 @@ class BeliefState:
         #  For each possible opponent placement,
         #  opponent has a different belief distribution over possible boards
         self.oppBoardDists = {fen: {fen: 1}} #Map<fen, Map<fen, prob>)
+        #A dictionary of unexpanded boards where:
+        #  The keys are turn numbers
+        #  The values are all boards last expanded at that turn
+        self.stashedBoards = defaultdict(set)
 
     #Likelihood that a board is the true board
     def _our_board_belief(self, fen):
