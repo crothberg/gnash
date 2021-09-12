@@ -35,7 +35,7 @@ def chunks(lst, n):
 ##TODO: Add a way to make the zeros nonzero
 ##TODO: If all the boards are zero, get the new 
 ## probabilities based on how bad they are for us
-def normalize(dist, adjust = False):
+def normalize(dist, adjust = False, giveToZeros=.1):
     if len(dist) == 0:
         raise(ValueError)
     total = sum(dist.values())
@@ -43,6 +43,26 @@ def normalize(dist, adjust = False):
         total = len(dist)
         for e in dist:
             dist[e] = 1/total
+    elif adjust and giveToZeros > 0 and len(dist)>1:
+        assert giveToZeros < 1
+        if giveToZeros:
+            zeroThreshold = giveToZeros/(len(dist)-1)
+            numZeros = sum([1 for x in dist.values() if x <= zeroThreshold])
+            total = sum([x for x in dist.values() if x > zeroThreshold])
+            if numZeros == len(dist):
+                for e in dist:
+                    dist[e] = 1/len(dist)
+                return dist
+            elif numZeros/len(dist) < giveToZeros:
+                total = sum(dist.values())
+                for e in dist:
+                    dist[e] /= total
+                return dist
+            for e in dist:
+                if dist[e] <= zeroThreshold:
+                    dist[e] = (1/numZeros) * giveToZeros
+                else:
+                    dist[e] = (dist[e]/total) * (1-giveToZeros)
     else:
         for e in dist:
             dist[e] /= total
@@ -112,8 +132,8 @@ def get_pseudo_legal_moves(fens):
 GOOD_SENSING_SQUARES = [i*8 + j for i in range(1,7) for j in range(1,7)]
 
 ##TODO: Find a better way to avoid leaving our king in check
-# Score of the person whose position it is NOT
-# return score in [0,1]
+# Score of the person who just played
+# return score [.1, .9] if not lost, 0 if lost, 1 if won
 def evaluate_board(board: chess.Board, engine):
     color = board.turn
     board.clear_stack()
@@ -122,8 +142,8 @@ def evaluate_board(board: chess.Board, engine):
         return 1
     if (board.attackers(board.turn, board.king(not board.turn))):
         return 0
-    baseScore = engine.analyse(board, chess.engine.Limit(time=0.05))['score'].pov(not board.turn).score(mate_score=1000)
-    score = max(-1, min(1, baseScore/1000))
+    baseScore = engine.analyse(board, chess.engine.Limit(time=0.05))['score'].pov(not board.turn).score(mate_score=153)
+    score = max(-.8, min(.8, baseScore/153))
     score += (1-score)/2
     return score
 #Score from the position of the person whose turn it is

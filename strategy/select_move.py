@@ -16,7 +16,6 @@ def select_move_from_dist(boardDist, maxTime):
     move = sample(get_move_dist(boardDist, maxTime))
     return move
 
-
 def get_move_dist_helper(move, sampleFen, legalMoveScores, engine):
     sampleBoard = chess.Board(sampleFen)
     assert move in get_all_moves(sampleBoard)
@@ -30,8 +29,10 @@ def get_move_dist_helper(move, sampleFen, legalMoveScores, engine):
     #Minor penalty for taking a piece (and revealing information)
     if isCapture:
         newBoardScore = max(0, newBoardScore - .05)
-    if sampleBoard.is_check() and not isCapture:
+    if sampleBoard.is_check() and not isCapture and not sampleBoard.attackers(sampleBoard.turn, sampleBoard.king(not sampleBoard.turn)):
         newBoardScore = min(1, newBoardScore + .2)
+    # if not sampleBoard.king(sampleBoard.turn):
+    #     newBoardScore += .3
     legalMoveScores[move][0] += 1
     legalMoveScores[move][1] = (totalScore + newBoardScore)/legalMoveScores[move][0]
 def get_move_dist(boardDist, maxTime):
@@ -58,6 +59,13 @@ def get_move_dist(boardDist, maxTime):
     # print("Raw scores:")
     # print(legalMoveScores)
     probs = normalize({move: legalMoveScores[move][1]**8 for move in legalMoves}, adjust=True)
+    topMoves = sorted(probs, key=probs.get, reverse=True)[:5]
+    #If all boards are the same score (e.g. because they're all lost)
+    # use the stockfish method
+    if all(abs(probs[topMoves[0]] - probs[move]) < .01 for move in topMoves):
+        print(legalMoveScores)
+        print(probs)
+        return get_quick_move_dist(boardDist, maxTime=maxTime/2)
     # impossible_move_set = set(probs.keys()).difference(set(move_actions(chess.Board(list(boardDist.keys())[0]))))
     # It should be okay for the opponent to attempt an impossible move, no? Why do we raise this error?
     # if len(impossible_move_set) > 1:# and len(boardDist) < 10:
