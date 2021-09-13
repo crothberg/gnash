@@ -81,7 +81,9 @@ class BeliefState:
             oppBoardDist = oldOppBoardDists[fen]
             for fen2, totalProb2 in oppBoardDist.items():
                 board = chess.Board(fen2)
-                board.push(move)
+                revisedMove = revise_move(board, move) if move != chess.Move.null() else chess.Move.null()
+                revisedMove = revisedMove or chess.Move.null()
+                board.push(revisedMove)
                 newFen2 = board.fen()
                 newOppBoardDist[newFen2] += moveProbs[move]*totalProb2
             newOppBoardDists[newFen] = normalize(newOppBoardDist, adjust=True)
