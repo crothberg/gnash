@@ -61,7 +61,7 @@ class GnashBot(Player):
             return
         if original: print('\nOpponent moved, handling result...')
         try:
-            self.beliefState.opp_move_result_update(captured_my_piece, capture_square, maxTime=3 if original else 1)
+            self.beliefState.opp_move_result_update(captured_my_piece, capture_square, maxTime=8 if original else 1)
         except ValueError:
             self._expand_stashed_boards(phase="handle_opponent_move_result")
         if original: print(f"Handled opponent move result in {time.time()-t0} seconds.")
