@@ -26,6 +26,7 @@ NUM_ENGINES=5
 moving_engines = [chess.engine.SimpleEngine.popen_uci(stockfish_path, setpgrp=True) for _ in range(NUM_ENGINES)]
 analysis_engines = [chess.engine.SimpleEngine.popen_uci(stockfish_path, setpgrp=True) for _ in range(NUM_ENGINES)]
 extra_engines = [chess.engine.SimpleEngine.popen_uci(stockfish_path, setpgrp=True) for _ in range(NUM_ENGINES)]
+oneMoreEngine = chess.engine.SimpleEngine.popen_uci(stockfish_path, setpgrp=True)
 print('Stockfish engines initialized..')
 
 def chunks(lst, n):
@@ -35,7 +36,7 @@ def chunks(lst, n):
 ##TODO: Add a way to make the zeros nonzero
 ##TODO: If all the boards are zero, get the new 
 ## probabilities based on how bad they are for us
-def normalize(dist, adjust = False, giveToZeros=.1):
+def normalize(dist, adjust = False, giveToZeros=.20):
     if len(dist) == 0:
         raise(ValueError)
     total = sum(dist.values())

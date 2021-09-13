@@ -1,4 +1,3 @@
-import os
 from chess import *
 import chess.engine
 from utils.types import *
@@ -30,9 +29,9 @@ def get_move_dist_helper(move, sampleFen, legalMoveScores, engine):
     if isCapture:
         newBoardScore = max(0, newBoardScore - .05)
     if sampleBoard.is_check() and not isCapture and not sampleBoard.attackers(sampleBoard.turn, sampleBoard.king(not sampleBoard.turn)):
-        newBoardScore = min(1, newBoardScore + .2)
-    # if not sampleBoard.king(sampleBoard.turn):
-    #     newBoardScore += .3
+        newBoardScore = min(1.15, newBoardScore + .4)
+    if not sampleBoard.king(sampleBoard.turn):
+        newBoardScore += .75
     legalMoveScores[move][0] += 1
     legalMoveScores[move][1] = (totalScore + newBoardScore)/legalMoveScores[move][0]
 def get_move_dist(boardDist, maxTime):
@@ -50,7 +49,7 @@ def get_move_dist(boardDist, maxTime):
             testMoves = set(get_all_moves(chess.Board(sampleFen))).intersection(legalMoveScores)
         else:
             testMoves = choose_n_moves(legalMoveScores, NUM_ENGINES, 1, totalTriesSoFar, sampleFen)
-            stockfishMove = get_stockfish_move(sampleFen, maxTime=.1, engine=moving_engines[0])
+            stockfishMove = get_stockfish_move(sampleFen, maxTime=.1, engine=oneMoreEngine)
             if stockfishMove not in testMoves:
                 testMoves += [stockfishMove]
         gevent.joinall([gevent.spawn(get_move_dist_helper, move, sampleFen, legalMoveScores, engine) for (move, engine) in zip(testMoves, analysis_engines)])

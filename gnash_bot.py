@@ -1,5 +1,3 @@
-import random
-import os
 from chess import D2, D3
 from reconchess import *
 from reconchess.utilities import capture_square_of_move
@@ -10,11 +8,11 @@ from helper_bot import HelperBot
 import chess.engine
 from collections import defaultdict
 from utils.util import *
-import types
 import time
 
 ##TODO: Handle en passant
 ##TODO: Handle promotion/captures?
+##TODO: Bonus to positions where king has few empty squares next to it
 class GnashBot(Player):
 
     def __init__(self):
@@ -178,7 +176,7 @@ class GnashBot(Player):
         if original: print(f"Handled anticipated opponent sensing action in {time.time()-t1} seconds.")
         # if original: print(self.history[self.turn])
         if original: self.turn += 1
-        if original: self._stash_boards(45)
+        if original: self._stash_boards(50)
         if original: print("Waiting for opponent...")
 
     def handle_game_end(self, winner_color: Optional[Color], win_reason: Optional[WinReason],
@@ -221,6 +219,9 @@ class GnashBot(Player):
         turn = self.turn
         while len(self.beliefState.stashedBoards[turn])==0:
             turn-=1
+
+        if all([len(self.beliefState.stashedBoards[t]) == 0 for t in range(turn)]):
+          self.useHelperBot = True
 
         print(f"Found {len(self.beliefState.stashedBoards[turn])} stashed boards at turn {turn}, currently turn {self.turn}", flush=True)
         stashedBoards = self.beliefState.stashedBoards[turn]
