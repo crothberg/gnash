@@ -42,7 +42,6 @@ class BeliefState:
         impossibleBoards = set()
         gevent.joinall([gevent.spawn(BeliefState.sense_update_helper, fen, senseResult, impossibleBoards) for fen in self.myBoardDist])
         #Remove impossible board views
-        BeliefState._remove_impossible_boards(self.myBoardDist, impossibleBoards)
         for board in impossibleBoards:
             del self.myBoardDist[board]
             del self.oppBoardDists[board]
