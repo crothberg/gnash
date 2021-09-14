@@ -53,7 +53,7 @@ class HelperBot():
 
         # otherwise, just randomly choose a sense action, but don't sense on a square where our pieces are located
         for square, piece in self.board.piece_map().items():
-            if piece.color == self.color:
+            if piece.color == self.color and square in sense_actions:
                 sense_actions.remove(square)
         return random.choice(sense_actions)
 
