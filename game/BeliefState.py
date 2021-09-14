@@ -45,7 +45,7 @@ class BeliefState:
         for board in impossibleBoards:
             del self.myBoardDist[board]
             del self.oppBoardDists[board]
-        normalize_board_dist(self.myBoardDist)
+        self.myBoardDist = normalize_board_dist(self.myBoardDist)
         self._check_invariants()
 
     def opp_sense_result_update_helper(self, fen, boardDist):
@@ -61,6 +61,7 @@ class BeliefState:
                 if board.piece_at(square) != piece:
                     impossibleBoards.add(board.fen())
         BeliefState._remove_impossible_boards(boardDist, impossibleBoards)
+
     def opp_sense_result_update(self):
         self._check_invariants()
         gevent.joinall([gevent.spawn(BeliefState.opp_sense_result_update_helper, self, fen, boardDist) for fen, boardDist in self.oppBoardDists.items()])
@@ -110,7 +111,10 @@ class BeliefState:
         if capturedMyPiece:
             for fen in self.myBoardDist:
                 board = chess.Board(fen)
-                if not board.is_attacked_by(not self.color, captureSquare):
+                couldHaveBeenEp =  False
+                if board.ep_square == captureSquare:
+                    couldHaveBeenEp = True
+                if not (board.is_attacked_by(not self.color, captureSquare) or couldHaveBeenEp):
                     impossibleBoards.add(board.fen())
         #Remove impossible board views
         BeliefState._remove_impossible_boards(self.myBoardDist, impossibleBoards)
@@ -127,13 +131,17 @@ class BeliefState:
         self.myBoardDist = normalize_board_dist(newMyBoardDist)
         self._condense_opp_board_dists()
         self._check_invariants()
+
     def our_move_result_update(self, requestedMove, takenMove, capturedOppPiece, captureSquare, maxTime):
         self._check_invariants()
         #Calculate impossible boards
         impossibleBoards = set()
         for fen in self.myBoardDist:
             board = chess.Board(fen)
-            if ((capturedOppPiece and not board.is_attacked_by(self.color, captureSquare))
+            couldHaveBeenEp =  False
+            if board.ep_square == captureSquare:
+                couldHaveBeenEp = True
+            if ((capturedOppPiece and not (board.is_attacked_by(self.color, captureSquare) or couldHaveBeenEp))
                 or (requestedMove != takenMove and requestedMove in board.pseudo_legal_moves)
                 or (takenMove not in list(board.pseudo_legal_moves) + [None])):
                 impossibleBoards.add(board.fen())
@@ -142,6 +150,18 @@ class BeliefState:
         BeliefState._remove_impossible_boards(self.myBoardDist, impossibleBoards)
         for board in impossibleBoards:
             del self.oppBoardDists[board]
+        for boardDist in self.oppBoardDists:
+            impossibleBoards = set()
+            for fen in boardDist:
+                board = chess.Board(fen)
+                couldHaveBeenEp =  False
+                if board.ep_square == captureSquare:
+                    couldHaveBeenEp = True
+                if ((capturedOppPiece and not (board.is_attacked_by(self.color, captureSquare) or couldHaveBeenEp))
+                    or (requestedMove != takenMove and requestedMove in board.pseudo_legal_moves)
+                    or (takenMove not in list(board.pseudo_legal_moves) + [None])):
+                    impossibleBoards.add(board.fen())
+            BeliefState._remove_impossible_boards(boardDist, impossibleBoards)
 
         self._check_invariants()
 
@@ -149,24 +169,24 @@ class BeliefState:
             prob = self.myBoardDist[oldFen]
             newOppBoardDist = defaultdict(float)
             believedMoveProbs = get_move_dist(oppBoardDist, maxTime=maxTime*prob)
+            board = chess.Board(oldFen)
             for fen, fenProb in oppBoardDist.items():
-                board = chess.Board(fen)
-                allMoves = get_all_moves(board)
+                allMoves = get_all_moves(chess.Board(fen))
                 for move, moveProb in believedMoveProbs.items():
                     if move not in allMoves:
                         continue
-                    board = chess.Board(fen)
-                    revisedMove = revise_move(board, move) if move != chess.Move.null() else chess.Move.null()
+                    board2 = chess.Board(fen)
+                    revisedMove = revise_move(board2, move) if move != chess.Move.null() else chess.Move.null()
                     revisedMove = revisedMove or chess.Move.null()
                     couldHaveBeenEp = False
-                    if board.is_en_passant(revisedMove) and board.ep_square == captureSquare:
+                    if board2.is_en_passant(revisedMove) and board2.ep_square == captureSquare:
                         couldHaveBeenEp = True
                     if ((capturedOppPiece and revisedMove.to_square != captureSquare and not couldHaveBeenEp)
-                        or (not capturedOppPiece and board.piece_at(revisedMove.to_square))):
+                        or (not capturedOppPiece and board2.piece_at(revisedMove.to_square))):
                         continue
-                    board.push(revisedMove)
-                    board.halfmove_clock = 0
-                    newFen = board.fen()
+                    board2.push(revisedMove)
+                    board2.halfmove_clock = 0
+                    newFen = board2.fen()
                     newOppBoardDist[newFen] += moveProb*fenProb
             self.oppBoardDists[oldFen] = normalize(newOppBoardDist, adjust=True)
 
@@ -234,7 +254,7 @@ class BeliefState:
         for dist in self.oppBoardDists.values():
             assert abs(1-sum(dist.values())) < .0001
         endTime = time.time()
-        print(f"Checked invariants in {endTime - startTime} seconds")
+        # print(f"Checked invariants in {endTime - startTime} seconds")
 
     def display(self):
         print(f'\tMY BOARD DISTRIBUTION: ({len(self.myBoardDist)})')
