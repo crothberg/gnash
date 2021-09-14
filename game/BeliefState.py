@@ -147,9 +147,6 @@ class BeliefState:
             impossibleBoards = set()
             for fen in boardDist:
                 board = chess.Board(fen)
-                couldHaveBeenEp =  False
-                if board.ep_square == captureSquare:
-                    couldHaveBeenEp = True
                 # if ((capturedOppPiece and capture_square_of_move(board, takenMove) != captureSquare)
                 #     or (not capturedOppPiece and capture_square_of_move(board, takenMove) != None)
                 if ((capture_square_of_move(board, takenMove) != captureSquare)
@@ -175,7 +172,7 @@ class BeliefState:
                     revisedMove = revisedMove or chess.Move.null()
                     # if ((capturedOppPiece and captureSquare != capture_square_of_move(board2, revisedMove))
                     #     or (not capturedOppPiece and capture_square_of_move(board2, revisedMove) != None)):
-                    if (capture_square_of_move(board, takenMove) != captureSquare):
+                    if (capture_square_of_move(board2, revisedMove) != captureSquare):
                         continue
                     board2.push(revisedMove)
                     board2.halfmove_clock = 0
