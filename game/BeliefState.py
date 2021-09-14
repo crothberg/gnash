@@ -73,11 +73,8 @@ class BeliefState:
             board = chess.Board(fen)
             revisedMove = revise_move(board, move) if move != chess.Move.null() else chess.Move.null()
             revisedMove = revisedMove or chess.Move.null()
-            couldHaveBeenEp = False
-            if board.is_en_passant(revisedMove) and board.ep_square == captureSquare:
-                couldHaveBeenEp = True
-            if ((capturedMyPiece and revisedMove.to_square != captureSquare and not couldHaveBeenEp)
-                or (not capturedMyPiece and board.piece_at(revisedMove.to_square) and not couldHaveBeenEp)):
+            if ((capturedMyPiece and captureSquare != capture_square_of_move(board, revisedMove))
+                or (not capturedMyPiece and capture_square_of_move(board, revisedMove) != None)):
                     continue
             board.push(revisedMove)
             board.halfmove_clock = 0
@@ -93,11 +90,8 @@ class BeliefState:
                 revisedMove = revisedMove or chess.Move.null()
                 if revisedMove != revisedMoveOnRealBoard:
                     continue
-                couldHaveBeenEp = False
-                if board2.is_en_passant(revisedMove) and board2.ep_square == captureSquare:
-                    couldHaveBeenEp = True
-                if ((capturedMyPiece and revisedMove.to_square != captureSquare and not couldHaveBeenEp)
-                    or (not capturedMyPiece and board2.piece_at(revisedMove.to_square) and not couldHaveBeenEp)):
+                if ((capturedMyPiece and captureSquare != capture_square_of_move(board2, revisedMove))
+                    or (not capturedMyPiece and capture_square_of_move(board2, revisedMove) != None)):
                         continue
                 board2.push(revisedMove)
                 board2.halfmove_clock = 0
@@ -178,11 +172,8 @@ class BeliefState:
                     board2 = chess.Board(fen)
                     revisedMove = revise_move(board2, move) if move != chess.Move.null() else chess.Move.null()
                     revisedMove = revisedMove or chess.Move.null()
-                    couldHaveBeenEp = False
-                    if board2.is_en_passant(revisedMove) and board2.ep_square == captureSquare:
-                        couldHaveBeenEp = True
-                    if ((capturedOppPiece and revisedMove.to_square != captureSquare and not couldHaveBeenEp)
-                        or (not capturedOppPiece and board2.piece_at(revisedMove.to_square) and not couldHaveBeenEp)): ##HERE
+                    if ((capturedOppPiece and captureSquare != capture_square_of_move(board2, revisedMove))
+                        or (not capturedOppPiece and capture_square_of_move(board2, revisedMove) != None)):
                         continue
                     board2.push(revisedMove)
                     board2.halfmove_clock = 0
@@ -232,6 +223,7 @@ class BeliefState:
             fens = set()
             for x in dist.keys():
                 fens.add(without_pieces(chess.Board(x), color).fen())
+                print(x)
             print(fens)
             return False
         return True

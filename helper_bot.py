@@ -1,3 +1,4 @@
+from utils.util import GOOD_SENSING_SQUARES
 import chess
 from reconchess import *
 import random
@@ -40,6 +41,7 @@ class HelperBot():
 
     def choose_sense(self, sense_actions: List[Square], move_actions: List[chess.Move], seconds_left: float) -> \
             Optional[Square]:
+        sense_actions = GOOD_SENSING_SQUARES[:]
         # if our piece was just captured, sense where it was captured
         if self.my_piece_captured_square:
             return self.my_piece_captured_square
