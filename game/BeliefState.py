@@ -44,7 +44,9 @@ class BeliefState:
         #Remove impossible board views
         BeliefState._remove_impossible_boards(self.myBoardDist, impossibleBoards)
         for board in impossibleBoards:
+            del self.myBoardDist[board]
             del self.oppBoardDists[board]
+        normalize_board_dist(self.myBoardDist)
         self._check_invariants()
 
     def opp_sense_result_update_helper(self, fen, boardDist):
