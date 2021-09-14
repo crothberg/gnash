@@ -234,16 +234,19 @@ class BeliefState:
             print(set(self.myBoardDist.keys()).difference(self.oppBoardDists.keys()))
             assert False, "Keys should always match between myBoardDist and oppBoardDists"
         for fen, boardDist in self.oppBoardDists.items():
+            if len(boardDist) == 0:
+                continue
             works = BeliefState._boardDist_works(boardDist, self.color)
             if not works:
                 print(fen)
                 assert False, "Board dist pieces should be consistent for one side"
-        if abs(1 - sum(self.myBoardDist.values())) >= .0001:
+        if len(self.myBoardDist)>0 and abs(1 - sum(self.myBoardDist.values())) >= .0001:
             print(self.myBoardDist)
             print(sum(self.myBoardDist.values()))
             assert False, "board dist values should always sum to 1"
         for dist in self.oppBoardDists.values():
-            assert abs(1-sum(dist.values())) < .0001
+            if len(dist)>0:
+                assert abs(1-sum(dist.values())) < .0001
         endTime = time.time()
         # print(f"Checked invariants in {endTime - startTime} seconds")
 

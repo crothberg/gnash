@@ -10,7 +10,15 @@ import gevent
 
 def select_move(beliefState, maxTime) -> Move:
     if len(beliefState.myBoardDist) == 1:
-        return moving_engines[0].play(chess.Board(list(beliefState.myBoardDist.keys())[0]), chess.engine.Limit(time=min(maxTime, 1.0))).move
+        board = chess.Board(list(beliefState.myBoardDist.keys())[0])
+        enemy_king_square = board.king(not board.turn)
+        if enemy_king_square:
+            # if there are any ally pieces that can take king, execute one of those moves
+            enemy_king_attackers = board.attackers(board.turn, enemy_king_square)
+            if enemy_king_attackers:
+                attacker_square = enemy_king_attackers.pop()
+                return chess.Move(attacker_square, enemy_king_square)
+        return moving_engines[0].play(board, chess.engine.Limit(time=min(maxTime, 1.0))).move
     moveDist = get_move_dist(beliefState.myBoardDist, maxTime=5)
     topMoves = sorted(moveDist, key=moveDist.get, reverse=True)[:5]
     print([(move, moveDist[move]) for move in topMoves])
