@@ -132,10 +132,9 @@ class BeliefState:
         impossibleBoards = set()
         for fen in self.myBoardDist:
             board = chess.Board(fen)
-            couldHaveBeenEp =  False
-            if board.ep_square == captureSquare:
-                couldHaveBeenEp = True
-            if ((capturedOppPiece and not (board.is_attacked_by(self.color, captureSquare) or couldHaveBeenEp))
+            # if ((capturedOppPiece and capture_square_of_move(board, takenMove) != captureSquare)
+            #     or (not capturedOppPiece and capture_square_of_move(board, takenMove) != None)
+            if ((capture_square_of_move(board, takenMove) != captureSquare)
                 or (requestedMove != takenMove and requestedMove in board.pseudo_legal_moves)
                 or (takenMove not in list(board.pseudo_legal_moves) + [None])):
                 impossibleBoards.add(board.fen())
@@ -151,7 +150,9 @@ class BeliefState:
                 couldHaveBeenEp =  False
                 if board.ep_square == captureSquare:
                     couldHaveBeenEp = True
-                if ((capturedOppPiece and not (board.is_attacked_by(self.color, captureSquare) or couldHaveBeenEp))
+                # if ((capturedOppPiece and capture_square_of_move(board, takenMove) != captureSquare)
+                #     or (not capturedOppPiece and capture_square_of_move(board, takenMove) != None)
+                if ((capture_square_of_move(board, takenMove) != captureSquare)
                     or (requestedMove != takenMove and requestedMove in board.pseudo_legal_moves)
                     or (takenMove not in list(board.pseudo_legal_moves) + [None])):
                     impossibleBoards.add(board.fen())
@@ -172,8 +173,9 @@ class BeliefState:
                     board2 = chess.Board(fen)
                     revisedMove = revise_move(board2, move) if move != chess.Move.null() else chess.Move.null()
                     revisedMove = revisedMove or chess.Move.null()
-                    if ((capturedOppPiece and captureSquare != capture_square_of_move(board2, revisedMove))
-                        or (not capturedOppPiece and capture_square_of_move(board2, revisedMove) != None)):
+                    # if ((capturedOppPiece and captureSquare != capture_square_of_move(board2, revisedMove))
+                    #     or (not capturedOppPiece and capture_square_of_move(board2, revisedMove) != None)):
+                    if (capture_square_of_move(board, takenMove) != captureSquare):
                         continue
                     board2.push(revisedMove)
                     board2.halfmove_clock = 0
