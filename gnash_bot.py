@@ -10,9 +10,9 @@ from collections import defaultdict
 from utils.util import *
 import time
 
-##TODO: Handle promotion/captures? Might be fine as is.
 ##TODO: Bonus to positions where king has few empty squares next to it
-##TODO: Fix bug where opp pieces are in different places in oppBoardDist
+##TODO: Find right speed vs quality balance
+##TODO: Add normal troutbot updates too?
 class GnashBot(Player):
 
     def __init__(self):
@@ -23,9 +23,9 @@ class GnashBot(Player):
         self.moveStartTime = None
         self.helperBot = HelperBot()
         self.useHelperBot = False
-        self.useHelperBotTime = 250
+        self.useHelperBotTime = 150
         self.turn = 0
-        self.whiteStartingMoves = [chess.Move(chess.D2, chess.D3), chess.Move(chess.C1, chess.D2), chess.Move(chess.G1, chess.F3), chess.Move.null()] #chess.Move(chess.C2, chess.C4), chess.Move(chess.B1, chess.C3)]
+        self.whiteStartingMoves = [chess.Move(chess.D2, chess.D3), chess.Move(chess.C1, chess.D2), chess.Move(chess.G1, chess.F3)] #chess.Move(chess.C2, chess.C4), chess.Move(chess.B1, chess.C3)]
         self.blackStartingMoves = [chess.Move(chess.D7, chess.D6), chess.Move(chess.C8, chess.D7), chess.Move(chess.G8, chess.F6)] #chess.Move(chess.C7, chess.C5), chess.Move(chess.B8, chess.C6)]
         #opponent_move_result, sense_result, move_result
         #for every turn
@@ -213,11 +213,11 @@ class GnashBot(Player):
         while len(self.beliefState.stashedBoards[turn])==0:
             turn-=1
 
-        if all([len(self.beliefState.stashedBoards[t]) == 0 for t in range(turn)]):
-          print("No more reserve, using helper bot with possible board while we still can...")
-          self.useHelperBot = True
-          possibleBoard = self.beliefState.stashedBoards[turn].pop()
-          self.helperBot.handle_game_start(self.color, chess.Board(possibleBoard), self.opponent_name)
+        # if all([len(self.beliefState.stashedBoards[t]) == 0 for t in range(turn)]):
+        #   print("No more reserve, using helper bot with possible board while we still can...")
+        #   self.useHelperBot = True
+        #   possibleBoard = self.beliefState.stashedBoards[turn].pop()
+        #   self.helperBot.handle_game_start(self.color, chess.Board(possibleBoard), self.opponent_name)
 
 
         print(f"Found {len(self.beliefState.stashedBoards[turn])} stashed boards at turn {turn}, currently turn {self.turn}", flush=True)

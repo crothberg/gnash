@@ -119,7 +119,7 @@ class BeliefState:
         
         newMyBoardDist = defaultdict(float)
         newOppBoardDists = dict()
-        gevent.joinall([gevent.spawn(BeliefState.opp_move_result_update_helper, fen, (maxTime*.5)/len(self.myBoardDist) + (maxTime*.5)*boardProb, boardProb, newMyBoardDist, self.oppBoardDists[fen], newOppBoardDists, capturedMyPiece, captureSquare) for fen, boardProb in self.myBoardDist.items()])
+        gevent.joinall([gevent.spawn(BeliefState.opp_move_result_update_helper, fen, min(1.5, (maxTime*.5)/len(self.myBoardDist) + (maxTime*.5)*boardProb), boardProb, newMyBoardDist, self.oppBoardDists[fen], newOppBoardDists, capturedMyPiece, captureSquare) for fen, boardProb in self.myBoardDist.items()])
         # print(f"Completed after {time.time()-startUpdateTime} seconds")
         self.oppBoardDists = newOppBoardDists
         self.myBoardDist = normalize_board_dist(newMyBoardDist)

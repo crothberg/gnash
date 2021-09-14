@@ -8,6 +8,7 @@ import time
 
 import gevent
 
+##TODO: Always promote to queen or knight
 def select_move(beliefState, maxTime) -> Move:
     if len(beliefState.myBoardDist) == 1:
         board = chess.Board(list(beliefState.myBoardDist.keys())[0])

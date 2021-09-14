@@ -68,16 +68,20 @@ def normalize(dist, adjust = False, giveToZeros=.10):
 
 def normalize_board_dist_helper(fen, dist, engine):
     try:
-        dist[fen] = (1 - evaluate_board_to_play(chess.Board(fen), engine, time=.03))**7
+        dist[fen] = (1 - evaluate_board_to_play(chess.Board(fen), engine, time=.05))**5
     except:
         dist[fen] = random.random()
 def normalize_board_dist(dist):
-    try:
-        a = list(dist.values())[0]
-    except:
+    if len(dist) == 0:
         raise(ValueError)
-    #If all boards have the same value...
-    if len(dist) > 1 and all(x == a for x in dist.values()):
+    if len(dist) == 1:
+        return normalize(dist, adjust=True)
+    mostLikelyBoard = list(sorted(dist, key=dist.get, reverse=True))[0]
+    mostLikelyBoards = list(sorted(dist, key=dist.get, reverse=True))[:20]
+    mostLikelyValues = [dist[x] for x in mostLikelyBoards]
+    likelihood = dist[mostLikelyBoard]
+    #If all boards have the same value (TODO: or at least half)...
+    if len(dist) > 1 and all(x >= likelihood/2-.0001 for x in mostLikelyValues):
     # if True:
         # print(dist)
         print(f"adjusting dist of size {len(dist)}...")

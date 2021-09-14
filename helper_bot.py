@@ -6,9 +6,7 @@ import os
 
 STOCKFISH_ENV_VAR = 'STOCKFISH_EXECUTABLE'
 #A fast bot for just in case
-##TODO: Improve this bot (maybe a better version of trout?)
-##note: trout breaks if it thinks it took the king (even if there was no capture)
-##      or if there are two kings
+##TODO: Improve play when no enemy king is found on board
 class HelperBot():
     def __init__(self):
         self.board = None
@@ -63,6 +61,7 @@ class HelperBot():
             self.board.set_piece_at(square, piece)
 
     def choose_move(self, move_actions: List[chess.Move], seconds_left: float) -> Optional[chess.Move]:
+        print(self.board.fen())
         oppKingSquares = []
         for square in chess.SQUARES:
             pieceAt = self.board.piece_at(square)
@@ -93,7 +92,7 @@ class HelperBot():
             print('Stockfish Engine died')
         except chess.engine.EngineError:
             print('Stockfish Engine bad state at "{}"'.format(self.board.fen()))
-
+        print("Waiting for opponent...")
         # if all else fails, pass
         return None
 
