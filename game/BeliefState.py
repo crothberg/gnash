@@ -77,7 +77,7 @@ class BeliefState:
             if board.is_en_passant(revisedMove) and board.ep_square == captureSquare:
                 couldHaveBeenEp = True
             if ((capturedMyPiece and revisedMove.to_square != captureSquare and not couldHaveBeenEp)
-                or (not capturedMyPiece and board.piece_at(revisedMove.to_square))):
+                or (not capturedMyPiece and board.piece_at(revisedMove.to_square) and not couldHaveBeenEp)):
                     continue
             board.push(revisedMove)
             board.halfmove_clock = 0
@@ -97,7 +97,7 @@ class BeliefState:
                 if board2.is_en_passant(revisedMove) and board2.ep_square == captureSquare:
                     couldHaveBeenEp = True
                 if ((capturedMyPiece and revisedMove.to_square != captureSquare and not couldHaveBeenEp)
-                    or (not capturedMyPiece and board2.piece_at(revisedMove.to_square))):
+                    or (not capturedMyPiece and board2.piece_at(revisedMove.to_square) and not couldHaveBeenEp)):
                         continue
                 board2.push(revisedMove)
                 board2.halfmove_clock = 0
@@ -150,7 +150,7 @@ class BeliefState:
         BeliefState._remove_impossible_boards(self.myBoardDist, impossibleBoards)
         for board in impossibleBoards:
             del self.oppBoardDists[board]
-        for boardDist in self.oppBoardDists:
+        for boardDist in self.oppBoardDists.values():
             impossibleBoards = set()
             for fen in boardDist:
                 board = chess.Board(fen)
@@ -182,7 +182,7 @@ class BeliefState:
                     if board2.is_en_passant(revisedMove) and board2.ep_square == captureSquare:
                         couldHaveBeenEp = True
                     if ((capturedOppPiece and revisedMove.to_square != captureSquare and not couldHaveBeenEp)
-                        or (not capturedOppPiece and board2.piece_at(revisedMove.to_square))):
+                        or (not capturedOppPiece and board2.piece_at(revisedMove.to_square) and not couldHaveBeenEp)): ##HERE
                         continue
                     board2.push(revisedMove)
                     board2.halfmove_clock = 0
