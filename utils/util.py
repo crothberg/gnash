@@ -72,7 +72,10 @@ def normalize_board_dist_helper(fen, dist, engine):
     except:
         dist[fen] = random.random()
 def normalize_board_dist(dist):
-    a = list(dist.values())[0]
+    try:
+        a = list(dist.values())[0]
+    except:
+        raise(ValueError)
     #If all boards have the same value...
     if len(dist) > 1 and all(x == a for x in dist.values()):
     # if True:

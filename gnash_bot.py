@@ -27,7 +27,6 @@ class GnashBot(Player):
         self.turn = 0
         self.whiteStartingMoves = [chess.Move(chess.D2, chess.D3), chess.Move(chess.C1, chess.D2), chess.Move(chess.G1, chess.F3), chess.Move.null()] #chess.Move(chess.C2, chess.C4), chess.Move(chess.B1, chess.C3)]
         self.blackStartingMoves = [chess.Move(chess.D7, chess.D6), chess.Move(chess.C8, chess.D7), chess.Move(chess.G8, chess.F6)] #chess.Move(chess.C7, chess.C5), chess.Move(chess.B8, chess.C6)]
-        self.playFromStartingMoves = True
         #opponent_move_result, sense_result, move_result
         #for every turn
         self.history = defaultdict(list)
@@ -130,15 +129,7 @@ class GnashBot(Player):
                 else:
                     self.playFromStartingMoves = False
         if not self.playFromStartingMoves:
-            # move = select_move(self.beliefState, maxTime=6)
-            moveDist = get_move_dist(self.beliefState.myBoardDist, maxTime=5)
-            topMoves = sorted(moveDist, key=moveDist.get, reverse=True)[:5]
-            print([(move, moveDist[move]) for move in topMoves])
-            # move = sample(moveDist)
-            move = topMoves[0]
-            # while move not in topMoves:
-            #     move = sample(moveDist)
-            print(moveDist[move])
+            move = select_move(self.beliefState, maxTime=5)
         print("MOVE:", move)
         if move == chess.Move.null():
             return None

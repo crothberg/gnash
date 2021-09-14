@@ -9,7 +9,15 @@ import time
 import gevent
 
 def select_move(beliefState, maxTime) -> Move:
-    return select_move_from_dist(beliefState.myBoardDist, maxTime)
+    if len(beliefState.myBoardDist) == 1:
+        return moving_engines[0].play(chess.Board(list(beliefState.myBoardDist.keys())[0]), chess.engine.Limit(time=min(maxTime, 1.0))).move
+    moveDist = get_move_dist(beliefState.myBoardDist, maxTime=5)
+    topMoves = sorted(moveDist, key=moveDist.get, reverse=True)[:5]
+    print([(move, moveDist[move]) for move in topMoves])
+    move = topMoves[0]
+    print(moveDist[move])
+    return move
+    # return select_move_from_dist(beliefState.myBoardDist, maxTime)
 
 def select_move_from_dist(boardDist, maxTime):
     move = sample(get_move_dist(boardDist, maxTime))
