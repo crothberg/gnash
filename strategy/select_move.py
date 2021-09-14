@@ -22,8 +22,9 @@ def get_move_dist_helper(move, sampleFen, legalMoveScores, engine):
     totalScore = timesSampled*avgScore
     revisedMove = revise_move(sampleBoard, move) if move != chess.Move.null() else chess.Move.null()
     revisedMove = revisedMove or chess.Move.null()
-    isCapture = sampleBoard.piece_at(revisedMove.to_square) != None if revisedMove != chess.Move.null() else False
+    isCapture = chess.Board.is_capture(sampleBoard, revisedMove) if revisedMove is not None else False
     sampleBoard.push(revisedMove if revisedMove is not None else chess.Move.null())
+    sampleBoard.halfmove_clock = 0
     newBoardScore = evaluate_board(sampleBoard, engine)
     #Minor penalty for taking a piece (and revealing information)
     if isCapture:
@@ -36,9 +37,9 @@ def get_move_dist_helper(move, sampleFen, legalMoveScores, engine):
     legalMoveScores[move][1] = (totalScore + newBoardScore)/legalMoveScores[move][0]
 def get_move_dist(boardDist, maxTime):
     legalMoves = get_pseudo_legal_moves(boardDist)
-    if maxTime <= .1:
+    if maxTime <= .05:
         return {move: 1/len(legalMoves) for move in legalMoves}
-    if maxTime <= .5:
+    if maxTime <= .25:
         return get_quick_move_dist(boardDist, maxTime)
     legalMoveScores = {move: [0.001, 0] for move in legalMoves} #[tries, averageScore]
     startTime = time.time()
@@ -49,9 +50,10 @@ def get_move_dist(boardDist, maxTime):
             testMoves = set(get_all_moves(chess.Board(sampleFen))).intersection(legalMoveScores)
         else:
             testMoves = choose_n_moves(legalMoveScores, NUM_ENGINES, 1, totalTriesSoFar, sampleFen)
-            stockfishMove = get_stockfish_move(sampleFen, maxTime=.1, engine=oneMoreEngine)
-            if stockfishMove not in testMoves:
-                testMoves += [stockfishMove]
+            # time.sleep(.05)
+            # stockfishMove = get_stockfish_move(sampleFen, maxTime=.1, engine=oneMoreEngine)
+            # if stockfishMove not in testMoves:
+            #     testMoves += [stockfishMove]
         gevent.joinall([gevent.spawn(get_move_dist_helper, move, sampleFen, legalMoveScores, engine) for (move, engine) in zip(testMoves, analysis_engines)])
         totalTriesSoFar += len(testMoves)
     # print(totalTriesSoFar, totalTriesSoFar/(time.time()-startTime), time.time()-startTime)
@@ -62,8 +64,8 @@ def get_move_dist(boardDist, maxTime):
     #If all boards are the same score (e.g. because they're all lost)
     # use the stockfish method
     if all(abs(probs[topMoves[0]] - probs[move]) < .01 for move in topMoves):
-        print(legalMoveScores)
-        print(probs)
+        # print(legalMoveScores)
+        # print(probs)
         return get_quick_move_dist(boardDist, maxTime=maxTime/2)
     # impossible_move_set = set(probs.keys()).difference(set(move_actions(chess.Board(list(boardDist.keys())[0]))))
     # It should be okay for the opponent to attempt an impossible move, no? Why do we raise this error?

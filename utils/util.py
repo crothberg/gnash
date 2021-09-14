@@ -33,10 +33,7 @@ def chunks(lst, n):
     for i in range(0, len(lst), n):
         yield lst[i:i+n]
 
-##TODO: Add a way to make the zeros nonzero
-##TODO: If all the boards are zero, get the new 
-## probabilities based on how bad they are for us
-def normalize(dist, adjust = False, giveToZeros=.20):
+def normalize(dist, adjust = False, giveToZeros=.10):
     if len(dist) == 0:
         raise(ValueError)
     total = sum(dist.values())
@@ -75,7 +72,9 @@ def normalize_board_dist_helper(fen, dist, engine):
     except:
         dist[fen] = random.random()
 def normalize_board_dist(dist):
-    if sum(dist.values()) == 0:
+    a = list(dist.values())[0]
+    #If all boards have the same value...
+    if len(dist) > 1 and all(x == a for x in dist.values()):
     # if True:
         # print(dist)
         print(f"adjusting dist of size {len(dist)}...")
@@ -154,10 +153,15 @@ def evaluate_board_to_play(board: chess.Board, engine, time=0.05):
     board.turn = color
     if (board.attackers(board.turn, board.king(not board.turn))):
         return 1
-    baseScore = engine.analyse(board, chess.engine.Limit(time))['score'].pov(board.turn).score(mate_score=1000)
+    baseScore = engine.analyse(board, chess.engine.Limit(time))['score'].pov(board.turn).score(mate_score=153)
     # if (not color): baseScore *= -1
-    score = max(-1, min(1, baseScore/1000))
+    score = max(-1, min(1, baseScore/153))
     score += (1-score)/2
     if (board.attackers(not board.turn, board.king(board.turn))):
-        score = max(0, score-.15)
+        score = max(0, score-.3)
     return score
+
+def without_pieces(board: chess.Board, color) -> chess.Board:
+    """Returns a copy of `board` with the opponent's pieces removed."""
+    mine = board.occupied_co[not color]
+    return board.transform(lambda bb: bb & mine)

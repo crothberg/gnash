@@ -10,9 +10,9 @@ from collections import defaultdict
 from utils.util import *
 import time
 
-##TODO: Handle en passant
-##TODO: Handle promotion/captures?
+##TODO: Handle promotion/captures? Might be fine as is.
 ##TODO: Bonus to positions where king has few empty squares next to it
+##TODO: Fix bug where opp pieces are in different places in oppBoardDist
 class GnashBot(Player):
 
     def __init__(self):
@@ -61,7 +61,7 @@ class GnashBot(Player):
             return
         if original: print('\nOpponent moved, handling result...')
         try:
-            self.beliefState.opp_move_result_update(captured_my_piece, capture_square, maxTime=8 if original else 1)
+            self.beliefState.opp_move_result_update(captured_my_piece, capture_square, maxTime=12 if original else 1)
         except ValueError:
             self._expand_stashed_boards(phase="handle_opponent_move_result")
         if original: print(f"Handled opponent move result in {time.time()-t0} seconds.")
@@ -176,7 +176,7 @@ class GnashBot(Player):
         if original: print(f"Handled anticipated opponent sensing action in {time.time()-t1} seconds.")
         # if original: print(self.history[self.turn])
         if original: self.turn += 1
-        if original: self._stash_boards(50)
+        if original: self._stash_boards(75)
         if original: print("Waiting for opponent...")
 
     def handle_game_end(self, winner_color: Optional[Color], win_reason: Optional[WinReason],
@@ -190,6 +190,8 @@ class GnashBot(Player):
         # input()
         mostLikelyBoards = list(sorted(self.beliefState.myBoardDist, key=self.beliefState.myBoardDist.get, reverse=True))[:maxToKeep]
         self.beliefState.stashedBoards[self.turn] = set(self.beliefState.myBoardDist.keys()).difference(mostLikelyBoards)
+        for board in self.beliefState.stashedBoards[self.turn]:
+            del self.beliefState.oppBoardDists[board]
         newMyBoardDist = {board: self.beliefState.myBoardDist[board] for board in mostLikelyBoards}
         # if sum(newMyBoardDist.values())>0:
         #     newestMyBoardDist = dict()
@@ -221,7 +223,11 @@ class GnashBot(Player):
             turn-=1
 
         if all([len(self.beliefState.stashedBoards[t]) == 0 for t in range(turn)]):
+          print("No more reserve, using helper bot with possible board while we still can...")
           self.useHelperBot = True
+          possibleBoard = self.beliefState.stashedBoards[turn].pop()
+          self.helperBot.handle_game_start(self.color, chess.Board(possibleBoard), self.opponent_name)
+
 
         print(f"Found {len(self.beliefState.stashedBoards[turn])} stashed boards at turn {turn}, currently turn {self.turn}", flush=True)
         stashedBoards = self.beliefState.stashedBoards[turn]
