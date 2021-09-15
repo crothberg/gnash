@@ -27,6 +27,7 @@ moving_engines = [chess.engine.SimpleEngine.popen_uci(stockfish_path, setpgrp=Tr
 analysis_engines = [chess.engine.SimpleEngine.popen_uci(stockfish_path, setpgrp=True) for _ in range(NUM_ENGINES)]
 extra_engines = [chess.engine.SimpleEngine.popen_uci(stockfish_path, setpgrp=True) for _ in range(NUM_ENGINES)]
 oneMoreEngine = chess.engine.SimpleEngine.popen_uci(stockfish_path, setpgrp=True)
+okayJustOneMore = chess.engine.SimpleEngine.popen_uci(stockfish_path, setpgrp=True)
 print('Stockfish engines initialized..')
 
 def chunks(lst, n):
@@ -71,7 +72,8 @@ def normalize_board_dist_helper(fen, dist, engine):
         dist[fen] = (1 - evaluate_board_to_play(chess.Board(fen), engine, time=.05))**5
     except:
         dist[fen] = random.random()
-def normalize_board_dist(dist):
+##SHOULD ONLY BE CALLED BY US
+def normalize_our_board_dist(dist, ourColor):
     if len(dist) == 0:
         raise(ValueError)
     if len(dist) == 1:
@@ -80,8 +82,13 @@ def normalize_board_dist(dist):
     mostLikelyBoards = list(sorted(dist, key=dist.get, reverse=True))[:20]
     mostLikelyValues = [dist[x] for x in mostLikelyBoards]
     likelihood = dist[mostLikelyBoard]
+    total = sum(dist.values())
+    for fen in dist:
+        board = chess.Board(fen)
+        if len(board.attackers(not ourColor, board.king(ourColor)))>0:
+            dist[fen] = max(likelihood, total/min(3, len(dist)))
     #If all boards have the same value (TODO: or at least half)...
-    if len(dist) > 1 and all(x >= likelihood/2-.0001 for x in mostLikelyValues):
+    if 100 > len(dist) > 1 and all(x >= likelihood/2-.0001 for x in mostLikelyValues):
     # if True:
         # print(dist)
         print(f"adjusting dist of size {len(dist)}...")

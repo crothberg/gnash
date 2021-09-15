@@ -19,8 +19,8 @@ def select_move(beliefState, maxTime) -> Move:
             if enemy_king_attackers:
                 attacker_square = enemy_king_attackers.pop()
                 return chess.Move(attacker_square, enemy_king_square)
-        return moving_engines[0].play(board, chess.engine.Limit(time=min(maxTime, 1.0))).move
-    moveDist = get_move_dist(beliefState.myBoardDist, maxTime=5)
+        return okayJustOneMore.play(board, chess.engine.Limit(time=min(maxTime, 1.0))).move
+    moveDist = get_move_dist(beliefState.myBoardDist, maxTime=maxTime, actuallyUs=True)
     topMoves = sorted(moveDist, key=moveDist.get, reverse=True)[:5]
     print([(move, moveDist[move]) for move in topMoves])
     move = topMoves[0]
@@ -28,11 +28,11 @@ def select_move(beliefState, maxTime) -> Move:
     return move
     # return select_move_from_dist(beliefState.myBoardDist, maxTime)
 
-def select_move_from_dist(boardDist, maxTime):
-    move = sample(get_move_dist(boardDist, maxTime))
-    return move
+# def select_move_from_dist(boardDist, maxTime):
+#     move = sample(get_move_dist(boardDist, maxTime))
+#     return move
 
-def get_move_dist_helper(move, sampleFen, legalMoveScores, engine):
+def get_move_dist_helper(move, sampleFen, legalMoveScores, engine, actuallyUs=False):
     sampleBoard = chess.Board(sampleFen)
     assert move in get_all_moves(sampleBoard)
     timesSampled, avgScore = legalMoveScores[move]
@@ -44,15 +44,17 @@ def get_move_dist_helper(move, sampleFen, legalMoveScores, engine):
     sampleBoard.halfmove_clock = 0
     newBoardScore = evaluate_board(sampleBoard, engine)
     #Minor penalty for taking a piece (and revealing information)
-    if isCapture:
+    if isCapture and actuallyUs:
         newBoardScore = max(0, newBoardScore - .05)
     if sampleBoard.is_check() and not isCapture and not sampleBoard.attackers(sampleBoard.turn, sampleBoard.king(not sampleBoard.turn)):
-        newBoardScore = min(1.15, newBoardScore + .4)
+        newBoardScore = min(1.15, newBoardScore + (.4 if not actuallyUs else .15))
     if not sampleBoard.king(sampleBoard.turn):
         newBoardScore += .75
+    if actuallyUs and (2 < chess.square_rank(sampleBoard.king(not sampleBoard.turn)) < 5):
+        newBoardScore = min(0, newBoardScore - .4)
     legalMoveScores[move][0] += 1
     legalMoveScores[move][1] = (totalScore + newBoardScore)/legalMoveScores[move][0]
-def get_move_dist(boardDist, maxTime):
+def get_move_dist(boardDist, maxTime, actuallyUs = False):
     legalMoves = get_pseudo_legal_moves(boardDist)
     if maxTime <= .05:
         return {move: 1/len(legalMoves) for move in legalMoves}
@@ -71,7 +73,7 @@ def get_move_dist(boardDist, maxTime):
             # stockfishMove = get_stockfish_move(sampleFen, maxTime=.1, engine=oneMoreEngine)
             # if stockfishMove not in testMoves:
             #     testMoves += [stockfishMove]
-        gevent.joinall([gevent.spawn(get_move_dist_helper, move, sampleFen, legalMoveScores, engine) for (move, engine) in zip(testMoves, analysis_engines)])
+        gevent.joinall([gevent.spawn(get_move_dist_helper, move, sampleFen, legalMoveScores, engine, actuallyUs) for (move, engine) in zip(testMoves, analysis_engines)])
         totalTriesSoFar += len(testMoves)
     # print(totalTriesSoFar, totalTriesSoFar/(time.time()-startTime), time.time()-startTime)
     # print("Raw scores:")

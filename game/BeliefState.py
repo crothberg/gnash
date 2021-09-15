@@ -36,7 +36,7 @@ class BeliefState:
         for square, piece in senseResult:
             if board.piece_at(square) != piece:
                 impossibleBoards.add(board.fen())
-    def sense_update(self, senseResult):
+    def sense_update(self, senseResult, maxTime):
         self._check_invariants()
         #Calculate impossible boards
         impossibleBoards = set()
@@ -45,12 +45,12 @@ class BeliefState:
         for board in impossibleBoards:
             del self.myBoardDist[board]
             del self.oppBoardDists[board]
-        self.myBoardDist = normalize_board_dist(self.myBoardDist)
+        self.myBoardDist = normalize_our_board_dist(self.myBoardDist, self.color)
         self._check_invariants()
 
     def opp_sense_result_update_helper(self, fen, boardDist):
         board = chess.Board(fen)
-        senseSquare = select_sense.select_sense(boardDist)
+        senseSquare = select_sense.select_sense(boardDist, gear=0)
         senseResult = simulate_sense(board, senseSquare)
         impossibleBoards = set()
         for fen in boardDist:
@@ -122,7 +122,7 @@ class BeliefState:
         gevent.joinall([gevent.spawn(BeliefState.opp_move_result_update_helper, fen, min(1.5, (maxTime*.5)/len(self.myBoardDist) + (maxTime*.5)*boardProb), boardProb, newMyBoardDist, self.oppBoardDists[fen], newOppBoardDists, capturedMyPiece, captureSquare) for fen, boardProb in self.myBoardDist.items()])
         # print(f"Completed after {time.time()-startUpdateTime} seconds")
         self.oppBoardDists = newOppBoardDists
-        self.myBoardDist = normalize_board_dist(newMyBoardDist)
+        self.myBoardDist = normalize_our_board_dist(newMyBoardDist, self.color)
         self._condense_opp_board_dists()
         self._check_invariants()
 
@@ -132,8 +132,6 @@ class BeliefState:
         impossibleBoards = set()
         for fen in self.myBoardDist:
             board = chess.Board(fen)
-            # if ((capturedOppPiece and capture_square_of_move(board, takenMove) != captureSquare)
-            #     or (not capturedOppPiece and capture_square_of_move(board, takenMove) != None)
             if ((capture_square_of_move(board, takenMove) != captureSquare)
                 or (requestedMove != takenMove and requestedMove in board.pseudo_legal_moves)
                 or (takenMove not in list(board.pseudo_legal_moves) + [None])):
@@ -147,8 +145,6 @@ class BeliefState:
             impossibleBoards = set()
             for fen in boardDist:
                 board = chess.Board(fen)
-                # if ((capturedOppPiece and capture_square_of_move(board, takenMove) != captureSquare)
-                #     or (not capturedOppPiece and capture_square_of_move(board, takenMove) != None)
                 if ((capture_square_of_move(board, takenMove) != captureSquare)
                     or (requestedMove != takenMove and requestedMove in board.pseudo_legal_moves)
                     or (takenMove not in list(board.pseudo_legal_moves) + [None])):
@@ -170,8 +166,6 @@ class BeliefState:
                     board2 = chess.Board(fen)
                     revisedMove = revise_move(board2, move) if move != chess.Move.null() else chess.Move.null()
                     revisedMove = revisedMove or chess.Move.null()
-                    # if ((capturedOppPiece and captureSquare != capture_square_of_move(board2, revisedMove))
-                    #     or (not capturedOppPiece and capture_square_of_move(board2, revisedMove) != None)):
                     if (capture_square_of_move(board2, revisedMove) != captureSquare):
                         continue
                     board2.push(revisedMove)

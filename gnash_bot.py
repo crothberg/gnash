@@ -32,20 +32,72 @@ class GnashBot(Player):
         self.history = defaultdict(list)
 
     def handle_game_start(self, color: Color, board: chess.Board, opponent_name: str):
+        print(opponent_name)
         self.color = color
         self.board = board
         self.opponent_name = opponent_name
         print('Game has started.')
         self.beliefState = BeliefState(color, board.fen())
         self.gameEndTime = time.time() + 900
-        self.playFromStartingMoves = True
+        self.playFromStartingMoves = False
+        if opponent_name == "RandomBot":
+            self.set_gear(4)
+        if opponent_name == "AttackBot":
+            self.set_gear(0)
+            # self.set_gear(3)
+            # self.playFromStartingMoves = True
+        else:
+            self.set_gear(0)
+        # self.set_gear(4)
 
-    def handle_opponent_move_result(self, captured_my_piece: bool, capture_square: Optional[Square], original=True):
-        if (not self.useHelperBot) and self.gameEndTime - time.time() < self.useHelperBotTime:
+    def set_gear(self, gear):
+        self.gear = gear
+        if gear == 0:
+            self.handleOppMoveMaxTime = 12
+            self.handleSenseMaxTime = 5
+            self.handleMoveMaxTime = 3
+            self.chooseMoveMaxTime = 5
+            self.maxInDist = 100
+        if gear == 1:
+            print("Picking up speed...")
+            self.handleOppMoveMaxTime = 9
+            self.handleSenseMaxTime = 3
+            self.handleMoveMaxTime = 1
+            self.chooseMoveMaxTime = 3
+            self.maxInDist = 30
+        if gear == 2:
+            print("Faster and faster...")
+            self.handleOppMoveMaxTime = 6
+            self.handleSenseMaxTime = 2
+            self.handleMoveMaxTime = .5
+            self.chooseMoveMaxTime = 2
+            self.maxInDist = 15
+        if gear == 3:
+            print("Full speed ahead!")
+            self.handleOppMoveMaxTime = 6
+            self.handleSenseMaxTime = 1
+            self.handleMoveMaxTime = .5
+            self.chooseMoveMaxTime = 1
+            self.maxInDist = 5
+        if gear == 4:
             print("Helper bot taking over to speed things up...")
             self.useHelperBot = True
             mostLikelyBoard = max(self.beliefState.myBoardDist, key=self.beliefState.myBoardDist.get)
             self.helperBot.handle_game_start(self.color, chess.Board(mostLikelyBoard), self.opponent_name)
+
+    def updateSpeed(self):
+        timeLeft = self.gameEndTime - time.time()
+        # if 200 < timeLeft <= 300 and self.gear < 1:
+        #     self.set_gear(1)            
+        # if 100 < timeLeft <= 200 and self.gear < 2:
+        #     self.set_gear(2)
+        # if 50 < timeLeft <= 100 and self.gear < 3:
+        #     self.set_gear(3)
+        if timeLeft <= 120 and self.gear < 4:
+            self.set_gear(4)
+
+    def handle_opponent_move_result(self, captured_my_piece: bool, capture_square: Optional[Square], original=True):
+        self.updateSpeed()           
         if original:
             self.history[self.turn].append((captured_my_piece, capture_square, False))
         if captured_my_piece:
@@ -60,7 +112,7 @@ class GnashBot(Player):
             return
         if original: print('\nOpponent moved, handling result...')
         try:
-            self.beliefState.opp_move_result_update(captured_my_piece, capture_square, maxTime=12 if original else 1)
+            self.beliefState.opp_move_result_update(captured_my_piece, capture_square, maxTime=self.handleOppMoveMaxTime if original else 0.001)
         except ValueError:
             self._expand_stashed_boards(phase="handle_opponent_move_result")
         if original: print(f"Handled opponent move result in {time.time()-t0} seconds.")
@@ -68,26 +120,18 @@ class GnashBot(Player):
     def choose_sense(self, sense_actions: List[Square], move_actions: List[chess.Move], seconds_left: float) -> \
             Optional[Square]:
         self.gameEndTime = time.time() + seconds_left
-        if (not self.useHelperBot) and self.gameEndTime - time.time() < self.useHelperBotTime:
-            print("Helper bot taking over to speed things up...")
-            self.useHelperBot = True
-            mostLikelyBoard = max(self.beliefState.myBoardDist, key=self.beliefState.myBoardDist.get)
-            self.helperBot.handle_game_start(self.color, chess.Board(mostLikelyBoard), self.opponent_name)
+        self.updateSpeed()
         t0 = time.time()
         if self.useHelperBot:
             return self.helperBot.choose_sense(sense_actions, move_actions, seconds_left)
         print('\nSensing now...')
-        sense_move = select_sense(self.beliefState.myBoardDist)
+        sense_move = select_sense(self.beliefState.myBoardDist, self.gear)
         print('\nSensing move is', sense_move)
         print(f"Chose a sensing action in {time.time()-t0} seconds.")
         return sense_move
 
     def handle_sense_result(self, sense_result: List[Tuple[Square, Optional[chess.Piece]]], original=True):
-        if (not self.useHelperBot) and self.gameEndTime - time.time() < self.useHelperBotTime:
-            print("Helper bot taking over to speed things up...")
-            self.useHelperBot = True
-            mostLikelyBoard = max(self.beliefState.myBoardDist, key=self.beliefState.myBoardDist.get)
-            self.helperBot.handle_game_start(self.color, chess.Board(mostLikelyBoard), self.opponent_name)
+        self.updateSpeed()
         if original:
             self.history[self.turn].append((sense_result, False))
         t0 = time.time()
@@ -97,7 +141,7 @@ class GnashBot(Player):
         # print('\nSense result is', sense_result)
         if original: print('Updating belief state after sense result...')
         try:
-            self.beliefState.sense_update(sense_result)
+            self.beliefState.sense_update(sense_result, maxTime = self.handleSenseMaxTime if original else 0.001)
         except ValueError:
             self._expand_stashed_boards(phase="handle_sense_result")
         if original: print('Our updated belief dist is now as follows:')
@@ -108,15 +152,11 @@ class GnashBot(Player):
 
     def choose_move(self, move_actions: List[chess.Move], seconds_left: float) -> Optional[chess.Move]:
         self.gameEndTime = time.time() + seconds_left
-        if (not self.useHelperBot) and self.gameEndTime - time.time() < self.useHelperBotTime:
-            print("Helper bot taking over to speed things up...")
-            self.useHelperBot = True
-            mostLikelyBoard = max(self.beliefState.myBoardDist, key=self.beliefState.myBoardDist.get)
-            self.helperBot.handle_game_start(self.color, chess.Board(mostLikelyBoard), self.opponent_name)
+        self.updateSpeed()
         t0 = time.time()
         if self.useHelperBot:
             return self.helperBot.choose_move(move_actions, seconds_left)
-        print("Choosing move...")
+        print(f"Choosing move with {self.gameEndTime - time.time()} seconds remaining...")
         if self.playFromStartingMoves:
             if self.color:
                 if len(self.whiteStartingMoves) > self.turn:
@@ -129,7 +169,7 @@ class GnashBot(Player):
                 else:
                     self.playFromStartingMoves = False
         if not self.playFromStartingMoves:
-            move = select_move(self.beliefState, maxTime=5)
+            move = select_move(self.beliefState, maxTime=self.chooseMoveMaxTime)
         print("MOVE:", move)
         if move == chess.Move.null():
             return None
@@ -138,11 +178,7 @@ class GnashBot(Player):
 
     def handle_move_result(self, requested_move: Optional[chess.Move], taken_move: Optional[chess.Move],
                            captured_opponent_piece: bool, capture_square: Optional[Square], original=True):
-        if (not self.useHelperBot) and self.gameEndTime - time.time() < self.useHelperBotTime:
-            print("Helper bot taking over to speed things up...")
-            self.useHelperBot = True
-            mostLikelyBoard = max(self.beliefState.myBoardDist, key=self.beliefState.myBoardDist.get)
-            self.helperBot.handle_game_start(self.color, chess.Board(mostLikelyBoard), self.opponent_name)
+        self.updateSpeed()
         if original:
             self.history[self.turn].append((requested_move, taken_move, captured_opponent_piece, capture_square, False))
         t0 = time.time()
@@ -154,7 +190,7 @@ class GnashBot(Player):
         if original: print('\nRequested move', requested_move, ', took move', taken_move)
         if original: print('Updating belief state...')
         try:
-            self.beliefState.our_move_result_update(requested_move, taken_move, captured_opponent_piece, capture_square, maxTime=2 if original else .7)
+            self.beliefState.our_move_result_update(requested_move, taken_move, captured_opponent_piece, capture_square, maxTime=self.handleMoveMaxTime if original else .001)
         except ValueError:
             self._expand_stashed_boards(phase="handle_move-result")
         if original: print(f"Handled our move result in {time.time()-t0} seconds.")
@@ -167,7 +203,7 @@ class GnashBot(Player):
         if original: print(f"Handled anticipated opponent sensing action in {time.time()-t1} seconds.")
         # if original: print(self.history[self.turn])
         if original: self.turn += 1
-        if original: self._stash_boards(75)
+        if original: self._stash_boards(self.maxInDist)
         if original: print("Waiting for opponent...")
 
     def handle_game_end(self, winner_color: Optional[Color], win_reason: Optional[WinReason],

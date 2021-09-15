@@ -9,18 +9,22 @@ def boardDist_to_squareDist(boardDist: BoardDist) -> SquareDist:
     squareDist = defaultdict(lambda: defaultdict(int))
     for fen, prob in boardDist.items():
         board = chess.Board(fen)
-        for square in chess.SQUARES:
-            squareDist[square][board.piece_at(square)] += prob
+        for square in chess.SQUARES:           
+            squareDist[square][board.piece_at(square)] += prob    
     return squareDist
 
 ##TODO: Parallelize this
-def select_sense(boardDist: BoardDist) -> SenseMove:
+def select_sense(boardDist: BoardDist, gear) -> SenseMove:
+    checkSquares = set()
+    if gear >= 3:
+        for fen in boardDist:
+            checkSquares.update(set(chess.Board(fen).checkers()))
     squareDist = boardDist_to_squareDist(boardDist)
     sense_options = {} # dict where each key is a sense move, each value the amount of uncertainty we would remove by that move
     for senseMove in util.GOOD_SENSING_SQUARES:
         sense_options[senseMove] = 0
         for sensed_square in util.get_sense_squares(senseMove):
             total_square_certainty = sum([pow(piece_prob, 2) for piece_prob in squareDist[sensed_square].values()])
-            sense_options[senseMove] += total_square_certainty
+            sense_options[senseMove] += 0 if sensed_square in checkSquares else total_square_certainty
     best_sense_move = min(sense_options, key=lambda sense: sense_options[sense])
     return best_sense_move
