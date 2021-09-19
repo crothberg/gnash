@@ -43,5 +43,5 @@ gnash = GnashBot()
 
 # reconchess.play_sense(game, gnash)
 
-winner_color, win_reason, history = play_local_game(gnash, opponent, game=game)
+winner_color, win_reason, history = play_local_game(opponent, gnash, game=game)
 history.save('games/game.json')

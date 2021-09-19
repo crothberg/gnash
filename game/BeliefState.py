@@ -119,7 +119,9 @@ class BeliefState:
         
         newMyBoardDist = defaultdict(float)
         newOppBoardDists = dict()
-        gevent.joinall([gevent.spawn(BeliefState.opp_move_result_update_helper, fen, min(1.5, (maxTime*.5)/len(self.myBoardDist) + (maxTime*.5)*boardProb), boardProb, newMyBoardDist, self.oppBoardDists[fen], newOppBoardDists, capturedMyPiece, captureSquare) for fen, boardProb in self.myBoardDist.items()])
+        for fen, boardProb in self.myBoardDist.items():
+            BeliefState.opp_move_result_update_helper(fen, min(1.5, (maxTime*.5)/len(self.myBoardDist) + (maxTime*.5)*boardProb), boardProb, newMyBoardDist, self.oppBoardDists[fen], newOppBoardDists, capturedMyPiece, captureSquare)
+            # gevent.joinall([gevent.spawn(BeliefState.opp_move_result_update_helper, fen, min(1.5, (maxTime*.5)/len(self.myBoardDist) + (maxTime*.5)*boardProb), boardProb, newMyBoardDist, self.oppBoardDists[fen], newOppBoardDists, capturedMyPiece, captureSquare) for fen, boardProb in self.myBoardDist.items()])
         # print(f"Completed after {time.time()-startUpdateTime} seconds")
         self.oppBoardDists = newOppBoardDists
         self.myBoardDist = normalize_our_board_dist(newMyBoardDist, self.color)
@@ -127,17 +129,37 @@ class BeliefState:
         self._check_invariants()
 
     def our_move_result_update(self, requestedMove, takenMove, capturedOppPiece, captureSquare, maxTime):
+        totalTimeCheckingInvariants = 0
+        totalDistSize = len(self.myBoardDist)
+        t = time.time()
         self._check_invariants()
+        totalTimeCheckingInvariants += time.time()-t
         #Calculate impossible boards
+        t = time.time()
         impossibleBoards = set()
+        kingless = 0
+        legal = 0
         for fen in self.myBoardDist:
             board = chess.Board(fen)
             if ((capture_square_of_move(board, takenMove) != captureSquare)
                 or (requestedMove != takenMove and requestedMove in board.pseudo_legal_moves)
                 or (takenMove not in list(board.pseudo_legal_moves) + [None])):
                 impossibleBoards.add(board.fen())
+                continue
+            legal += 1
+            if takenMove != None:
+                board.push(takenMove)
+                if board.king(board.turn) == None:
+                    impossibleBoards.add(fen)
+                    kingless += 1
+        if kingless > 1:
+            print(kingless, legal)
+        if kingless == legal and kingless > 1:
+            return "won"
+        # print(f"Finding impossible boards took {time.time() - t} seconds")
                     
         #Remove impossible board views
+        t = time.time()
         BeliefState._remove_impossible_boards(self.myBoardDist, impossibleBoards)
         for board in impossibleBoards:
             del self.oppBoardDists[board]
@@ -150,13 +172,20 @@ class BeliefState:
                     or (takenMove not in list(board.pseudo_legal_moves) + [None])):
                     impossibleBoards.add(board.fen())
             BeliefState._remove_impossible_boards(boardDist, impossibleBoards)
+        # print(f"Removing impossible boards took {time.time() - t} seconds")
 
+        t = time.time()
         self._check_invariants()
-
+        totalTimeCheckingInvariants += time.time()-t
+        
+        timeSpentGettingMoveDists = 0.0
         for oldFen, oppBoardDist in self.oppBoardDists.items():
             prob = self.myBoardDist[oldFen]
             newOppBoardDist = defaultdict(float)
-            believedMoveProbs = get_move_dist(oppBoardDist, maxTime=maxTime*prob)
+            t = time.time()
+            believedMoveProbs = get_move_dist(oppBoardDist, maxTime=maxTime*prob, actuallyUs=True)
+            timeSpentGettingMoveDists += time.time() - t
+            # print(f"Got move dist with time {maxTime*prob} in {time.time() - t} seconds...")
             board = chess.Board(oldFen)
             for fen, fenProb in oppBoardDist.items():
                 allMoves = get_all_moves(chess.Board(fen))
@@ -174,9 +203,12 @@ class BeliefState:
                     newOppBoardDist[newFen] += moveProb*fenProb
             self.oppBoardDists[oldFen] = normalize(newOppBoardDist, adjust=True)
 
+        t = time.time()
         self._check_invariants()
+        totalTimeCheckingInvariants += time.time()-t
 
         #Update myBoardDist keys based on taken move
+        t = time.time()
         newBoardDist = defaultdict(float)
         newOppBoardDists = dict()
         for fen in self.myBoardDist:
@@ -190,7 +222,13 @@ class BeliefState:
         self.myBoardDist = newBoardDist
         self.oppBoardDists = newOppBoardDists
         self._condense_opp_board_dists()
+        # print(f"Updating board dists with move took {time.time() - t} seconds")
+        t = time.time()
         self._check_invariants()
+        totalTimeCheckingInvariants += time.time()-t
+        # print(f"For max time {maxTime} and distSize {totalDistSize} spent {timeSpentGettingMoveDists} getting move dists")
+        # print(f"For max time {maxTime} and distSize {totalDistSize} spent {totalTimeCheckingInvariants} checking invariants")
+
 
     def _condense_opp_board_dists(self, maxBoards=300):
         self._check_invariants()
@@ -222,6 +260,7 @@ class BeliefState:
         return True
     
     def _check_invariants(self):
+        # return
         startTime = time.time()
         if not (len(set(self.oppBoardDists.keys()).intersection(self.myBoardDist.keys())) == len(self.myBoardDist) == len(self.oppBoardDists)):
             print(set(self.oppBoardDists.keys()).difference(self.myBoardDist.keys()))

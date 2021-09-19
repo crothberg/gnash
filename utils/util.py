@@ -148,15 +148,19 @@ GOOD_SENSING_SQUARES = [i*8 + j for i in range(1,7) for j in range(1,7)]
 ##TODO: Find a better way to avoid leaving our king in check
 # Score of the person who just played
 # return score [.1, .9] if not lost, 0 if lost, 1 if won
-def evaluate_board(board: chess.Board, engine):
+def evaluate_board(board: chess.Board, engine, time=.05):
     color = board.turn
     board.clear_stack()
     board.turn = color
     if board.king(board.turn) == None:
         return 1
-    if (board.attackers(board.turn, board.king(not board.turn))):
-        return 0
-    baseScore = engine.analyse(board, chess.engine.Limit(time=0.05))['score'].pov(not board.turn).score(mate_score=153)
+    # if (board.attackers(board.turn, board.king(not board.turn))):
+    #     return 0
+    baseScore = None
+    try:
+        baseScore = engine.analyse(board, chess.engine.Limit(time=time))['score'].pov(not board.turn).score(mate_score=153)
+    except:
+        return None
     score = max(-.8, min(.8, baseScore/153))
     score += (1-score)/2
     return score
@@ -173,9 +177,133 @@ def evaluate_board_to_play(board: chess.Board, engine, time=0.05):
     score += (1-score)/2
     if (board.attackers(not board.turn, board.king(board.turn))):
         score = max(0, score-.3)
+    if (would_threaten_mate(board)):
+        score = max(0, score-.4)
     return score
 
 def without_pieces(board: chess.Board, color) -> chess.Board:
     """Returns a copy of `board` with the opponent's pieces removed."""
     mine = board.occupied_co[not color]
     return board.transform(lambda bb: bb & mine)
+
+def would_threaten_mate(board):
+    board.push(chess.Move.null())
+    for move in get_all_moves(board):
+        revisedMove = revise_move(board, move) if move != chess.Move.null() else chess.Move.null()
+        revisedMove = revisedMove or chess.Move.null()
+        board.push(revisedMove)
+        if board.is_checkmate():
+            board.pop() #pop revised move
+            board.pop() #pop original null move
+            return True
+        board.pop()
+    board.pop()
+    return False
+
+def does_threaten_mate(board):
+    for move in get_all_moves(board):
+        revisedMove = revise_move(board, move) if move != chess.Move.null() else chess.Move.null()
+        revisedMove = revisedMove or chess.Move.null()
+        board.push(revisedMove)
+        if board.is_checkmate():
+            board.pop() #pop revised move
+            return True
+        board.pop()
+    return False
+
+# def get_threaten_mate_moves(board):
+#     # return set()
+#     threatenMateMoves = set()
+#     for move in get_all_moves(board):
+#         revisedMove = revise_move(board, move) if move != chess.Move.null() else chess.Move.null()
+#         revisedMove = revisedMove or chess.Move.null()
+#         board.push(revisedMove)
+#         if would_threaten_mate(board):
+#             threatenMateMoves.add(revisedMove)
+#         board.pop()
+#     return threatenMateMoves
+
+def get_threaten_mate_moves_dist(dist):
+    # return set()
+    t = time.time()
+    mostLikelyBoards = list(sorted(dist, key=dist.get, reverse=True))[:2]
+    legalMoves = get_pseudo_legal_moves(dist)
+    threatenMateMoves = set()
+    for fen in mostLikelyBoards:
+        if dist[fen] < .1:
+            continue
+        board = chess.Board(fen)
+        allMoves = get_all_moves(board)
+        for move in set(legalMoves).intersection(set(allMoves)):
+            revisedMove = revise_move(board, move) if move != chess.Move.null() else chess.Move.null()
+            revisedMove = revisedMove or chess.Move.null()
+            if capture_square_of_move(board, revisedMove) != None:
+                continue
+            board.push(revisedMove)
+            if would_threaten_mate(board):
+                threatenMateMoves.add(revisedMove)
+            board.pop()
+    # print(f"Got threatenMateMoves for dist of size {len(dist)} in {time.time() - t} seconds")
+    return threatenMateMoves
+
+
+def get_check_moves(board):
+    checkMoves = set()
+    for move in get_all_moves(board):
+        revisedMove = revise_move(board, move) if move != chess.Move.null() else chess.Move.null()
+        revisedMove = revisedMove or chess.Move.null()
+        board.push(revisedMove)
+        if board.is_check():
+            checkMoves.add(revisedMove)
+        board.pop()
+    return checkMoves
+
+def get_silent_check_moves(board):
+    checkMoves = set()
+    for move in get_all_moves(board):
+        revisedMove = revise_move(board, move) if move != chess.Move.null() else chess.Move.null()
+        revisedMove = revisedMove or chess.Move.null()
+        if capture_square_of_move(board, revisedMove) != None:
+            continue
+        board.push(revisedMove)
+        if board.is_check():
+            checkMoves.add(revisedMove)
+        board.pop()
+    return checkMoves
+
+def get_check_moves_dist(dist):
+    legalMoves = get_pseudo_legal_moves(dist)
+    checkMoves = set()
+    for fen in dist:
+        board = chess.Board(fen)
+        allMoves = get_all_moves(board)
+        for move in set(legalMoves).intersection(set(allMoves)):
+            revisedMove = revise_move(board, move) if move != chess.Move.null() else chess.Move.null()
+            revisedMove = revisedMove or chess.Move.null()
+            if capture_square_of_move(board, revisedMove) != None:
+                continue
+            board.push(revisedMove)
+            if board.is_check():
+                checkMoves.add(revisedMove)
+            board.pop()
+    return checkMoves
+
+def get_silent_check_moves_dist(dist):
+    # print("Getting silent check moves...")
+    startTime = time.time()
+    legalMoves = get_pseudo_legal_moves(dist)
+    checkMoves = set()
+    for fen in dist:
+        board = chess.Board(fen)
+        allMoves = get_all_moves(board)
+        for move in set(legalMoves).intersection(set(allMoves)):
+            revisedMove = revise_move(board, move) if move != chess.Move.null() else chess.Move.null()
+            revisedMove = revisedMove or chess.Move.null()
+            if capture_square_of_move(board, revisedMove) != None:
+                continue
+            board.push(revisedMove)
+            if board.is_check():
+                checkMoves.add(revisedMove)
+            board.pop()
+    # print(f"Got silent check moves in {time.time()-startTime} seconds")
+    return checkMoves

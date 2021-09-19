@@ -12,7 +12,8 @@ import time
 
 ##TODO: Bonus to positions where king has few empty squares next to it
 ##TODO: Find right speed vs quality balance
-##TODO: Add normal troutbot updates too?
+##TODO: To play quickly, add "quick_handle_opp_move":
+#          get n stockfish moves for likely boards and (for opp) check! moves for unlikely boards
 class GnashBot(Player):
 
     def __init__(self):
@@ -40,12 +41,15 @@ class GnashBot(Player):
         self.beliefState = BeliefState(color, board.fen())
         self.gameEndTime = time.time() + 900
         self.playFromStartingMoves = False
-        if opponent_name == "RandomBot":
+        if opponent_name in {"random", "RandomBot"}:
             self.set_gear(4)
-        if opponent_name == "AttackBot":
-            self.set_gear(0)
-            # self.set_gear(3)
-            # self.playFromStartingMoves = True
+        # if opponent_name in {"attacker", "AttackerBot"}:
+        #     self.set_gear(2)
+        #     self.set_gear(0)
+        #     # self.set_gear(3)
+        #     self.playFromStartingMoves = True
+        #     self.whiteStartingMoves = [chess.Move(chess.G2, chess.G3)] + self.whiteStartingMoves
+        #     self.blackStartingMoves = [chess.Move(chess.G7, chess.G6)] + self.blackStartingMoves
         else:
             self.set_gear(0)
         # self.set_gear(4)
@@ -57,28 +61,28 @@ class GnashBot(Player):
             self.handleSenseMaxTime = 5
             self.handleMoveMaxTime = 3
             self.chooseMoveMaxTime = 5
-            self.maxInDist = 100
+            self.maxInDist = 80
         if gear == 1:
             print("Picking up speed...")
             self.handleOppMoveMaxTime = 9
             self.handleSenseMaxTime = 3
             self.handleMoveMaxTime = 1
             self.chooseMoveMaxTime = 3
-            self.maxInDist = 30
+            self.maxInDist = 50
         if gear == 2:
             print("Faster and faster...")
             self.handleOppMoveMaxTime = 6
             self.handleSenseMaxTime = 2
             self.handleMoveMaxTime = .5
             self.chooseMoveMaxTime = 2
-            self.maxInDist = 15
+            self.maxInDist = 30
         if gear == 3:
             print("Full speed ahead!")
             self.handleOppMoveMaxTime = 6
             self.handleSenseMaxTime = 1
             self.handleMoveMaxTime = .5
             self.chooseMoveMaxTime = 1
-            self.maxInDist = 5
+            self.maxInDist = 10
         if gear == 4:
             print("Helper bot taking over to speed things up...")
             self.useHelperBot = True
@@ -97,6 +101,7 @@ class GnashBot(Player):
             self.set_gear(4)
 
     def handle_opponent_move_result(self, captured_my_piece: bool, capture_square: Optional[Square], original=True):
+        if captured_my_piece: print("They captured a piece!")
         self.updateSpeed()           
         if original:
             self.history[self.turn].append((captured_my_piece, capture_square, False))
@@ -178,6 +183,7 @@ class GnashBot(Player):
 
     def handle_move_result(self, requested_move: Optional[chess.Move], taken_move: Optional[chess.Move],
                            captured_opponent_piece: bool, capture_square: Optional[Square], original=True):
+        if captured_opponent_piece: print("We captured a piece!")
         self.updateSpeed()
         if original:
             self.history[self.turn].append((requested_move, taken_move, captured_opponent_piece, capture_square, False))
@@ -190,7 +196,9 @@ class GnashBot(Player):
         if original: print('\nRequested move', requested_move, ', took move', taken_move)
         if original: print('Updating belief state...')
         try:
-            self.beliefState.our_move_result_update(requested_move, taken_move, captured_opponent_piece, capture_square, maxTime=self.handleMoveMaxTime if original else .001)
+            result = self.beliefState.our_move_result_update(requested_move, taken_move, captured_opponent_piece, capture_square, maxTime=self.handleMoveMaxTime if original else .001)
+            if result == "won":
+                return
         except ValueError:
             self._expand_stashed_boards(phase="handle_move-result")
         if original: print(f"Handled our move result in {time.time()-t0} seconds.")
@@ -209,7 +217,7 @@ class GnashBot(Player):
     def handle_game_end(self, winner_color: Optional[Color], win_reason: Optional[WinReason],
                         game_history: GameHistory):
         game_history.save('games/game.json')
-        print(f"{winner_color} won by {win_reason}!")
+        print(f"{'we' if winner_color == self.color else 'they'} won by {win_reason}!")
 
     def _stash_boards(self, maxToKeep):
         # self.beliefState.display()
