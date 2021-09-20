@@ -33,7 +33,7 @@ class GnashBot(Player):
         self.history = defaultdict(list)
 
     def handle_game_start(self, color: Color, board: chess.Board, opponent_name: str):
-        print(opponent_name)
+        print(f"Playing {opponent_name} as {'White' if color else 'Black'}! Let's go!")
         self.color = color
         self.board = board
         self.opponent_name = opponent_name
@@ -44,7 +44,7 @@ class GnashBot(Player):
         if opponent_name in {"random", "RandomBot"}:
             self.set_gear(4)
         # if opponent_name in {"attacker", "AttackerBot"}:
-        #     self.set_gear(2)
+        # self.set_gear(3)
         #     self.set_gear(0)
         #     # self.set_gear(3)
         #     self.playFromStartingMoves = True
@@ -78,7 +78,7 @@ class GnashBot(Player):
             self.maxInDist = 30
         if gear == 3:
             print("Full speed ahead!")
-            self.handleOppMoveMaxTime = 6
+            self.handleOppMoveMaxTime = 4
             self.handleSenseMaxTime = 1
             self.handleMoveMaxTime = .5
             self.chooseMoveMaxTime = 1
@@ -101,7 +101,7 @@ class GnashBot(Player):
             self.set_gear(4)
 
     def handle_opponent_move_result(self, captured_my_piece: bool, capture_square: Optional[Square], original=True):
-        if captured_my_piece: print("They captured a piece!")
+        if original and captured_my_piece: print("They captured a piece!")
         self.updateSpeed()           
         if original:
             self.history[self.turn].append((captured_my_piece, capture_square, False))
@@ -183,7 +183,7 @@ class GnashBot(Player):
 
     def handle_move_result(self, requested_move: Optional[chess.Move], taken_move: Optional[chess.Move],
                            captured_opponent_piece: bool, capture_square: Optional[Square], original=True):
-        if captured_opponent_piece: print("We captured a piece!")
+        if original and captured_opponent_piece: print("We captured a piece!")
         self.updateSpeed()
         if original:
             self.history[self.turn].append((requested_move, taken_move, captured_opponent_piece, capture_square, False))
@@ -217,7 +217,7 @@ class GnashBot(Player):
     def handle_game_end(self, winner_color: Optional[Color], win_reason: Optional[WinReason],
                         game_history: GameHistory):
         game_history.save('games/game.json')
-        print(f"{'we' if winner_color == self.color else 'they'} won by {win_reason}!")
+        print(f"{'We' if winner_color == self.color else f'They ({self.opponent_name})'} won by {win_reason}!")
 
     def _stash_boards(self, maxToKeep):
         # self.beliefState.display()

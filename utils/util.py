@@ -1,7 +1,6 @@
 import chess
 import chess.engine
 import random
-from reconchess.history import Turn
 from reconchess.utilities import *
 import os
 import gevent
@@ -24,9 +23,8 @@ if not os.path.exists(stockfish_path):
 # initialize the stockfish engine
 NUM_ENGINES=5
 moving_engines = [chess.engine.SimpleEngine.popen_uci(stockfish_path, setpgrp=True) for _ in range(NUM_ENGINES)]
-analysis_engines = [chess.engine.SimpleEngine.popen_uci(stockfish_path, setpgrp=True) for _ in range(NUM_ENGINES)]
+analysisEngine = chess.engine.SimpleEngine.popen_uci(stockfish_path, setpgrp=True)
 extra_engines = [chess.engine.SimpleEngine.popen_uci(stockfish_path, setpgrp=True) for _ in range(NUM_ENGINES)]
-oneMoreEngine = chess.engine.SimpleEngine.popen_uci(stockfish_path, setpgrp=True)
 okayJustOneMore = chess.engine.SimpleEngine.popen_uci(stockfish_path, setpgrp=True)
 print('Stockfish engines initialized..')
 
@@ -134,6 +132,12 @@ def get_sense_squares(square):
 def get_all_moves(board : chess.Board):
     return move_actions(board) + [chess.Move.null()]
 
+def king_capture_moves(board : chess.Board):
+    return {move for move in board.pseudo_legal_moves if capture_square_of_move(board, move) == board.king(not board.turn)}
+
+def into_check_moves(board : chess.Board):
+    return {move for move in list(board.pseudo_legal_moves) + [chess.Move.null()] if board.is_into_check(move)}
+
 #Gets all moves that are actually legal (plus null) on at least one chessboard in fens
 def get_pseudo_legal_moves(fens):
     legalMoves = set()
@@ -164,6 +168,12 @@ def evaluate_board(board: chess.Board, engine, time=.05):
     score = max(-.8, min(.8, baseScore/153))
     score += (1-score)/2
     return score
+
+def fix_base_score(score):
+    score = max(-.8, min(.8, score/153))
+    score += (1-score)/2
+    return score
+
 #Score from the position of the person whose turn it is
 def evaluate_board_to_play(board: chess.Board, engine, time=0.05):
     color = board.turn
