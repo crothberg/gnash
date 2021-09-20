@@ -8,7 +8,6 @@ import time
 
 # import gevent
 
-##TODO: Always promote to queen or knight
 def select_move(beliefState, maxTime) -> Move:
     if len(beliefState.myBoardDist) == 1:
         board = chess.Board(list(beliefState.myBoardDist.keys())[0])
@@ -102,7 +101,7 @@ def get_move_dist_helper_2(testMoves, sampleFen, legalMoveScores, actuallyUs):
             print(legalTestMoves)
             # input()
             return
-        if not len(legalTestMoves) <= len(baseScores) <= len(legalTestMoves) + 1:
+        if not len(legalTestMoves) <= len(baseScores) <= len(legalTestMoves) + 1 + len(psuedoLegalOnly):
             print(sampleFen)
             print(testMoves)
             print(baseScores, len(baseScores))
@@ -275,6 +274,7 @@ def get_quick_move_dist(boardDist, maxTime, movesToConsider = None, actuallyUs =
                 print(board)
                 print(probs)
                 print(move)
+                probs[move] = 3 #this is a checkmate
             probs[move] += 1
     movingEngineIndex = 0
     while time.time()-startTime < maxTime - timePerMove:
