@@ -218,6 +218,9 @@ class GnashBot(Player):
                         game_history: GameHistory):
         game_history.save('games/game.json')
         print(f"{'We' if winner_color == self.color else f'They ({self.opponent_name})'} won by {win_reason}!")
+        for engine_list in [moving_engines, [analysisEngine], extra_engines, [okayJustOneMore]]:
+            for engine in engine_list:
+                engine.quit()
 
     def _stash_boards(self, maxToKeep):
         # self.beliefState.display()
