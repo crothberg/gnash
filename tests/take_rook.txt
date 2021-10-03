@@ -1,0 +1,4 @@
+w
+6k1/pbr2ppp/1p1Bpn2/3p4/3P4/5P2/P2N2PP/7K w - - 0 29 probability: 0.5863287643920615
+6k1/1br2ppp/pp1Bpn2/3p4/3P4/5P2/P2N2PP/7K w - - 0 29 probability: 0.23081594246345957
+6k1/1br2ppp/1p1Bpn2/p2p4/3P4/5P2/P2N2PP/7K w - - 0 29 probability: 0.18285529314447901

@@ -1,0 +1,18 @@
+b
+8/1p1r1kpp/8/3p1p2/3Pp3/8/RP3PP1/5R1K b - - 0 32       probability: 0.009090909090909092        
+7R/1p1r1kpp/8/3p1p2/3Pp3/8/1P3PP1/5R1K b - - 0 32      probability: 0.17676508344030806
+8/1p1r1kpp/8/3p1p2/3Pp3/8/1P3PP1/R4R1K b - - 0 32      probability: 0.009090909090909092        
+R7/1p1r1kpp/8/3p1p2/1P1Pp3/8/5PP1/5R1K b - - 0 32      probability: 0.009090909090909092        
+2R5/1p1r1kpp/8/3p1p2/3Pp3/8/1P3PP1/5R1K b - - 0 32     probability: 0.009090909090909092        
+R7/1p1r1kpp/8/3p1p2/3Pp3/8/1P3PP1/5R1K b - - 0 32      probability: 0.009090909090909092        
+1R6/1p1r1kpp/8/3p1p2/3Pp3/8/1P3PP1/5R1K b - - 0 32     probability: 0.009090909090909092        
+8/1p1r1kpp/8/R2p1p2/3Pp3/8/1P3PP1/5R1K b - - 0 32      probability: 0.009090909090909092        
+8/1p1r1kpp/8/3p1p2/3Pp3/R7/1P3PP1/5R1K b - - 0 32      probability: 0.009090909090909092        
+8/1p1r1kpp/8/3p1p2/R2Pp3/8/1P3PP1/5R1K b - - 0 32      probability: 0.009090909090909092        
+R7/1p1r1kpp/8/3p1p2/3Pp3/1P6/5PP1/5R1K b - - 0 32      probability: 0.009090909090909092        
+8/Rp1r1kpp/8/3p1p2/3Pp3/8/1P3PP1/5R1K b - - 0 32       probability: 0.009090909090909092        
+3R4/1p1r1kpp/8/3p1p2/3Pp3/8/1P3PP1/5R1K b - - 0 32     probability: 0.05343388960205391
+5R2/1p1r1kpp/8/3p1p2/3Pp3/8/1P3PP1/5R1K b - - 0 32     probability: 0.5094993581514762
+4R3/1p1r1kpp/8/3p1p2/3Pp3/8/1P3PP1/5R1K b - - 0 32     probability: 0.05343388960205391
+6R1/1p1r1kpp/8/3p1p2/3Pp3/8/1P3PP1/5R1K b - - 0 32     probability: 0.05343388960205391
+8/1p1r1kpp/R7/3p1p2/3Pp3/8/1P3PP1/5R1K b - - 0 32      probability: 0.05343388960205391

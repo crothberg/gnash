@@ -1,0 +1,5 @@
+b
+rn1qkbnr/3p1ppp/p3p3/8/1p1NN3/P7/1PP1BPPP/R1BQ1RK1 b kq - 0 9  probability: 0.11746105090636245 
+rn1qkbnr/3p1ppp/p3p3/8/1p1NN3/7P/PPP1BPP1/R1BQ1RK1 b kq - 0 9  probability: 0.2554604732778956  
+rn1qkbnr/3p1ppp/p3p3/8/1p1NN2P/8/PPP1BPP1/R1BQ1RK1 b kq - 0 9  probability: 0.3279135385851999  
+rn1qkbnr/3p1ppp/p3p3/8/Pp1NN3/8/1PP1BPPP/R1BQ1RK1 b kq - 0 9   probability: 0.1017805517656971

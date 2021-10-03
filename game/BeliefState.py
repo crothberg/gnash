@@ -1,4 +1,5 @@
 from collections import defaultdict
+import heapq
 from strategy import select_sense
 from strategy.select_move import *
 from utils.util import normalize, simulate_sense
@@ -45,12 +46,12 @@ class BeliefState:
         for board in impossibleBoards:
             del self.myBoardDist[board]
             del self.oppBoardDists[board]
-        self.myBoardDist = normalize_our_board_dist(self.myBoardDist, self.color)
+        self.myBoardDist = normalize_our_board_dist(self.myBoardDist, self.color) if maxTime > .5 else normalize(self.myBoardDist, adjust=True)
         self._check_invariants()
 
     def opp_sense_result_update_helper(self, fen, boardDist):
         board = chess.Board(fen)
-        senseSquare = select_sense.select_sense(boardDist, gear=0)
+        senseSquare = select_sense.select_sense(boardDist, actuallyUs=False)
         senseResult = simulate_sense(board, senseSquare)
         impossibleBoards = set()
         for fen in boardDist:
@@ -120,11 +121,10 @@ class BeliefState:
         newMyBoardDist = defaultdict(float)
         newOppBoardDists = dict()
         for fen, boardProb in self.myBoardDist.items():
+            ##TODO: Make boards where they could have taken our king (and knew it) much more unlikely
             BeliefState.opp_move_result_update_helper(fen, min(1.5, (maxTime*.5)/len(self.myBoardDist) + (maxTime*.5)*boardProb), boardProb, newMyBoardDist, self.oppBoardDists[fen], newOppBoardDists, capturedMyPiece, captureSquare)
-            # gevent.joinall([gevent.spawn(BeliefState.opp_move_result_update_helper, fen, min(1.5, (maxTime*.5)/len(self.myBoardDist) + (maxTime*.5)*boardProb), boardProb, newMyBoardDist, self.oppBoardDists[fen], newOppBoardDists, capturedMyPiece, captureSquare) for fen, boardProb in self.myBoardDist.items()])
-        # print(f"Completed after {time.time()-startUpdateTime} seconds")
         self.oppBoardDists = newOppBoardDists
-        self.myBoardDist = normalize_our_board_dist(newMyBoardDist, self.color)
+        self.myBoardDist = normalize_our_board_dist(newMyBoardDist, self.color) if maxTime > .5 else normalize(newMyBoardDist, adjust=True)
         self._condense_opp_board_dists()
         self._check_invariants()
 
@@ -141,9 +141,11 @@ class BeliefState:
         legal = 0
         for fen in self.myBoardDist:
             board = chess.Board(fen)
+            pseudoLegalMoves = get_pseudo_legal_moves({fen})
+            pseudoLegalMoves.add(None)
             if ((capture_square_of_move(board, takenMove) != captureSquare)
-                or (requestedMove != takenMove and requestedMove in board.pseudo_legal_moves)
-                or (takenMove not in list(board.pseudo_legal_moves) + [None])):
+                or (requestedMove != takenMove and requestedMove in pseudoLegalMoves)
+                or (takenMove not in pseudoLegalMoves)):
                 impossibleBoards.add(board.fen())
                 continue
             legal += 1
@@ -167,10 +169,13 @@ class BeliefState:
             impossibleBoards = set()
             for fen in boardDist:
                 board = chess.Board(fen)
+                pseudoLegalMoves = get_pseudo_legal_moves({fen})
+                pseudoLegalMoves.add(None)
                 if ((capture_square_of_move(board, takenMove) != captureSquare)
-                    or (requestedMove != takenMove and requestedMove in board.pseudo_legal_moves)
-                    or (takenMove not in list(board.pseudo_legal_moves) + [None])):
+                    or (requestedMove != takenMove and requestedMove in pseudoLegalMoves)
+                    or (takenMove not in pseudoLegalMoves)):
                     impossibleBoards.add(board.fen())
+                    continue
             BeliefState._remove_impossible_boards(boardDist, impossibleBoards)
         # print(f"Removing impossible boards took {time.time() - t} seconds")
 
@@ -230,7 +235,7 @@ class BeliefState:
         # print(f"For max time {maxTime} and distSize {totalDistSize} spent {totalTimeCheckingInvariants} checking invariants")
 
 
-    def _condense_opp_board_dists(self, maxBoards=300):
+    def _condense_opp_board_dists(self, maxBoards=600):
         self._check_invariants()
         if sum([len(dist) for dist in self.oppBoardDists.values()]) > maxBoards:
             newOppBoardDists = dict()
@@ -254,8 +259,6 @@ class BeliefState:
             fens = set()
             for x in dist.keys():
                 fens.add(without_pieces(chess.Board(x), color).fen())
-                print(x)
-            print(fens)
             return False
         return True
     
@@ -286,6 +289,7 @@ class BeliefState:
     def display(self):
         print(f'\tMY BOARD DISTRIBUTION: ({len(self.myBoardDist)})')
         for fen, prob in self.myBoardDist.items():
+            # if prob > .05:
             print('\t\t', fen, '\tprobability:', prob)
         print(f"Additional {sum([len(x) for x in self.stashedBoards.values()])} boards stashed.")
         # print(f'\tOPP\'S BOARD DISTS ({len(self.oppBoardDists)}):')

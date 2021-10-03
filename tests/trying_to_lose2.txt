@@ -1,0 +1,18 @@
+                 w
+                 r1bq1rk1/1pp1b1pn/p3p2p/8/2P1B3/2N2n2/PP3PPP/R1BR1K2 w - - 0 18        probability: 0.061056356698205555
+                 r1bq1rk1/p1p1b1pn/1p2p2p/8/2P1B3/2N2n2/PP3PPP/R1BR1K2 w - - 0 18       probability: 0.025621413809042454
+                 r1bq1rk1/ppp1b1pn/4p2p/8/2P1B3/2N2n2/PP3PPP/R1BR1K2 w - - 0 18         probability: 0.06378088434356824
+                 r1bq1rk1/ppp1b2n/4p2p/6p1/2P1B3/2N2n2/PP3PPP/R1BR1K2 w - - 0 18        probability: 0.04644502010263468
+                 r1bq1rk1/pp2b1pn/2p1p2p/8/2P1B3/2N2n2/PP3PPP/R1BR1K2 w - - 0 18        probability: 0.06518767839798044
+                 r1bq1rk1/ppp1b2n/4p1pp/8/2P1B3/2N2n2/PP3PPP/R1BR1K2 w - - 0 18         probability: 0.039828444947888064
+                 r1bq1rk1/ppp1b1p1/4p2p/4n3/2P1B3/2N2n2/PP3PPP/R1BR1K2 w - - 0 18       probability: 0.12773183715917896
+                 r1bq1rk1/ppp1b1p1/4p2p/6n1/2P1B3/2N2n2/PP3PPP/R1BR1K2 w - - 0 18       probability: 0.12636057847248552
+                 r1bq1rk1/ppp1b1pn/4p3/7p/2P1B3/2N2n2/PP3PPP/R1BR1K2 w - - 0 18         probability: 0.05125812179848863
+                 r1bq1r1k/ppp1b1pn/4p2p/8/2P1B3/2N2n2/PP3PPP/R1BR1K2 w - - 0 18         probability: 0.05125812179848863
+                 r1bq1rk1/p1p1b1pn/4p2p/1p6/2P1B3/2N2n2/PP3PPP/R1BR1K2 w - - 0 18       probability: 0.009284357047546935
+                 r1bq1rk1/pp2b1pn/4p2p/2p5/2P1B3/2N2n2/PP3PPP/R1BR1K2 w - - 0 18        probability: 0.05125812179848863
+                 r1bq1rk1/1pp1b1pn/4p2p/p7/2P1B3/2N2n2/PP3PPP/R1BR1K2 w - - 0 18        probability: 0.06590248519176686
+                 1rbq1rk1/ppp1b1pn/4p2p/8/2P1B3/2N2n2/PP3PPP/R1BR1K2 w - - 0 18         probability: 0.04695702619266158
+                 r1bq1rk1/ppp1b1p1/4p2p/n7/2P1B3/2N2n2/PP3PPP/R1BR1K2 w - - 0 18        probability: 0.06378088434356824
+                 r1bq1rk1/ppp1b1p1/4p2p/8/1nP1B3/2N2n2/PP3PPP/R1BR1K2 w - - 0 18        probability: 0.05014781881998746
+                 rnbq1rk1/ppp1b1p1/4p2p/8/2P1B3/2N2n2/PP3PPP/R1BR1K2 w - - 0 18         probability: 0.05414084907801912

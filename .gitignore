@@ -1,2 +1,3 @@
 stockfish*.exe
 *.pyc
+gameLogs/*

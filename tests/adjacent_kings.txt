@@ -1,0 +1,4 @@
+w
+8/P7/5p2/3n3p/4p3/6P1/2k2K2/8 w - - 0 59       probability: 0.05
+8/P7/5p2/3n3p/4p3/6P1/3k1K2/8 w - - 0 59       probability: 0.05
+8/P7/5p2/3n3p/4p3/6P1/4kK2/8 w - - 0 59        probability: 0.9
