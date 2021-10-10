@@ -71,7 +71,7 @@ class GnashBot(Player):
             self.handleSenseMaxTime = 5
             self.handleMoveMaxTime = 3
             self.chooseMoveMaxTime = 5
-            self.maxInDist = 100
+            self.maxInDist = 130
         if gear == 1:
             print("Picking up speed...")
             self.handleOppMoveMaxTime = 9

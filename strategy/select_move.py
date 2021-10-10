@@ -153,7 +153,7 @@ def get_move_dist_helper_2(testMoves, sampleFen, legalMoveScores, actuallyUs):
         baseScores[move] = -1
     for move in kingCaptures:
         baseScores[move] = 1
-        legalMoveScores[move][0] = 1
+        # legalMoveScores[move][0] = 1
     for move, revisedMove in revisedMoves.items():
         if revisedMove not in baseScores:
             print(baseScores)

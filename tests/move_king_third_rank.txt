@@ -1,0 +1,5 @@
+w
+5k2/4r1pp/3B4/3p4/8/1p3P2/1Pr2KPP/7R w - - 0 31 	probability: 0.2349382729468707
+5k2/4r1p1/3B4/3p3p/8/1p3P2/1Pr2KPP/7R w - - 0 31 	probability: 0.3896852686447652
+5k2/4r1p1/3B3p/3p4/8/1p3P2/1Pr2KPP/7R w - - 0 31 	probability: 0.2822553817073452
+5k2/4r1pp/3B4/8/3p4/1p3P2/1Pr2KPP/7R w - - 0 31 	probability: 0.09312107670101896
