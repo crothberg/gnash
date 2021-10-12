@@ -1,9 +1,7 @@
-from chess import D2, D3
 from reconchess import *
-from reconchess.utilities import capture_square_of_move
 from game.BeliefState import BeliefState
 from strategy.select_sense import select_sense
-from strategy.select_move import get_move_dist, select_move
+from strategy.select_move import select_move
 from helper_bot import HelperBot
 import chess.engine
 from collections import defaultdict
@@ -11,8 +9,9 @@ from utils.util import *
 import time
 import sys
 import datetime
-
-
+import requests
+import string
+import random
 
 ##TODO: Bonus to positions where king has few empty squares next to it
 ##TODO: To play quickly, add "quick_handle_opp_move":
@@ -38,12 +37,14 @@ class GnashBot(Player):
         #for every turn
         self.history = defaultdict(list)
 
-    def handle_game_start(self, color: Color, board: chess.Board, opponent_name: str):
+    def handle_game_start(self, color: Color, board: chess.Board, opponent_name: str, background=False):
         now = datetime.datetime.now()
         gameTimeStr = f"{now.date()}_{now.hour}_{now.minute}_{now.second}"
-        if opponent_name not in {"moveFinder", "senseFinder"}:
-            sys.stdout=open(f"gameLogs/{opponent_name}_{gameTimeStr}.txt","w")
+        # PUT THIS BACK IN!
+        # if opponent_name not in {"moveFinder", "senseFinder"}:
+        #     sys.stdout=open(f"gameLogs/{opponent_name}_{gameTimeStr}.txt","w")
         print(f"PLAYING {opponent_name} AS {'WHITE' if color else 'BLACK'}! Let's go!")
+        self.game_id = ''.join(random.choices(string.ascii_uppercase + string.digits, k=6))
         self.color = color
         self.board = board
         self.opponent_name = opponent_name
@@ -62,6 +63,8 @@ class GnashBot(Player):
         #     self.blackStartingMoves = [chess.Move(chess.G7, chess.G6)] + self.blackStartingMoves
         else:
             self.set_gear(0)
+        if not background:
+            requests.post(url='http://127.0.0.1:5000/create_game', data={'game_id': self.game_id, 'color': self.color, 'board': self.board.fen(), 'oppName': self.opponent_name})
         # self.set_gear(4)
 
     def set_gear(self, gear):
@@ -239,6 +242,7 @@ class GnashBot(Player):
         mostLikelyBoards = sortedFens[:maxToKeep]
         unlikelyBoards = sortedFens[maxToKeep:]
         self.beliefState.stashedBoards[self.turn] = unlikelyBoards
+        requests.post(url='http://127.0.0.1:5000/add_boards_to_stash', data={'game_id': self.game_id, 'boards': unlikelyBoards, 'turn': self.turn})
         for board in self.beliefState.stashedBoards[self.turn]:
             del self.beliefState.oppBoardDists[board]
         newMyBoardDist = {board: self.beliefState.myBoardDist[board] for board in mostLikelyBoards}
