@@ -8,12 +8,6 @@ from gnash_bot import GnashBot
 import json
 import time
 
-os.environ['FORKED_BY_MULTIPROCESSING'] = '1'
-
-'''
-celery -A background_update.celery worker --loglevel=info
-'''
-
 app = Flask(__name__)
 
 all_games = {}
