@@ -12,10 +12,11 @@ SECONDS_PER_PLAYER = 900
 
 game = LocalGame(SECONDS_PER_PLAYER)
 
-# opponent = TroutBot()
-# opponent = RandomBot()
-opponent = AttackerBot()
-gnash = GnashBot()
+# white = GnashBot(useQuickMoveDist=True)
+white = RandomBot()
+# white = AttackerBot()
+# white = TroutBot()
+black = GnashBot(isTest=True)
 
 # opponent.handle_game_start(chess.WHITE, game.board.copy(), 'Trout')
 # gnash.handle_game_start(chess.BLACK, game.board.copy(), 'Gnash')
@@ -43,5 +44,5 @@ gnash = GnashBot()
 
 # reconchess.play_sense(game, gnash)
 
-winner_color, win_reason, history = play_local_game(opponent, gnash, game=game)
+winner_color, win_reason, history = play_local_game(white, black, game=game)
 history.save('games/game.json')

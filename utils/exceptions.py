@@ -1,0 +1,2 @@
+class EmptyBoardDist(Exception):
+    pass

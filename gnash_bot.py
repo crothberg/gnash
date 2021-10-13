@@ -1,15 +1,16 @@
-from chess import D2, D3
+import sys
+import chess
 from reconchess import *
-from reconchess.utilities import capture_square_of_move
-from game.BeliefState import BeliefState
+from game.BeliefState import *
+from game.Stash import *
 from strategy.select_sense import select_sense
-from strategy.select_move import get_move_dist, select_move
+from strategy.select_move import select_move
 from helper_bot import HelperBot
 import chess.engine
-from collections import defaultdict
+from utils.exceptions import EmptyBoardDist
 from utils.util import *
+from utils.history_utils import *
 import time
-import sys
 import datetime
 
 
@@ -20,49 +21,44 @@ import datetime
 ##TODO: If they could have made a good move but didn't, make that board less likely
 ##TODO: Fix bug where we took their king (but weren't sure we would), and unstash boards after we capture it
 ##TODO: Combine oppMoveResultUpdate and senseUpdate?
+##TODO: Add boardDist evaluation
+##TODO: extra points for lots of possible moves, keep good pieces in different sensing zones?
 class GnashBot(Player):
 
-    def __init__(self):
+    def __init__(self, useQuickMoveDist=False, isTest = False):
         self.color = None
         self.board = None
         self.beliefState = None
         self.firstTurn = True
         self.moveStartTime = None
+        self.isTest = isTest
+        self.useQuickMoveDist= useQuickMoveDist
         self.helperBot = HelperBot()
         self.useHelperBot = False
-        self.useHelperBotTime = 60
+        self.useHelperBotTime = 120
         self.turn = 0
-        self.whiteStartingMoves = [chess.Move(chess.D2, chess.D3), chess.Move(chess.C1, chess.D2), chess.Move(chess.G1, chess.F3)] #chess.Move(chess.C2, chess.C4), chess.Move(chess.B1, chess.C3)]
-        self.blackStartingMoves = [chess.Move(chess.D7, chess.D6), chess.Move(chess.C8, chess.D7), chess.Move(chess.G8, chess.F6)] #chess.Move(chess.C7, chess.C5), chess.Move(chess.B8, chess.C6)]
-        #opponent_move_result, sense_result, move_result
-        #for every turn
-        self.history = defaultdict(list)
 
     def handle_game_start(self, color: Color, board: chess.Board, opponent_name: str):
-        now = datetime.datetime.now()
-        gameTimeStr = f"{now.date()}_{now.hour}_{now.minute}_{now.second}"
-        if opponent_name not in {"moveFinder", "senseFinder"}:
-            sys.stdout=open(f"gameLogs/{opponent_name}_{gameTimeStr}.txt","w")
+        self.color, self.board, self.opponent_name = color, board, opponent_name
         print(f"PLAYING {opponent_name} AS {'WHITE' if color else 'BLACK'}! Let's go!")
-        self.color = color
-        self.board = board
-        self.opponent_name = opponent_name
-        print('Game has started.')
+
+        if not self.isTest:
+            now = datetime.datetime.now()
+            gameTimeStr = f"{now.date()}_{now.hour}_{now.minute}_{now.second}"
+            if opponent_name not in {"moveFinder", "senseFinder"}:
+                sys.stdout = open(f"gameLogs/{opponent_name}_{gameTimeStr}.txt","w")
+
         self.beliefState = BeliefState(color, board.fen())
+        self.stash = Stash(color)
+        self.stash.start_background_processor(1)
+
         self.gameEndTime = time.time() + 900
-        self.playFromStartingMoves = False
-        if opponent_name in {"random", "RandomBot"}:
+        if opponent_name in {"Oracle", "StrangeFish2"}:
+            self.useQuickMoveDist = True
+        if opponent_name in {"random", "RandomBot"} and not self.isTest:
             self.set_gear(4)
-        # if opponent_name in {"attacker", "AttackerBot"}:
-        # self.set_gear(3)
-        #     self.set_gear(0)
-        #     # self.set_gear(3)
-        #     self.playFromStartingMoves = True
-        #     self.whiteStartingMoves = [chess.Move(chess.G2, chess.G3)] + self.whiteStartingMoves
-        #     self.blackStartingMoves = [chess.Move(chess.G7, chess.G6)] + self.blackStartingMoves
         else:
-            self.set_gear(0)
-        # self.set_gear(4)
+            self.set_gear(0 if not self.isTest else 3)
 
     def set_gear(self, gear):
         self.gear = gear
@@ -71,7 +67,7 @@ class GnashBot(Player):
             self.handleSenseMaxTime = 5
             self.handleMoveMaxTime = 3
             self.chooseMoveMaxTime = 5
-            self.maxInDist = 130
+            self.maxInDist = 400
         if gear == 1:
             print("Picking up speed...")
             self.handleOppMoveMaxTime = 9
@@ -92,8 +88,9 @@ class GnashBot(Player):
             self.handleSenseMaxTime = 1
             self.handleMoveMaxTime = .5
             self.chooseMoveMaxTime = 1
-            self.maxInDist = 10
+            self.maxInDist = 2
         if gear == 4:
+            self.maxInDist = 1
             print("Helper bot taking over to speed things up...")
             self.useHelperBot = True
             mostLikelyBoard = max(self.beliefState.myBoardDist, key=self.beliefState.myBoardDist.get)
@@ -101,36 +98,31 @@ class GnashBot(Player):
 
     def updateSpeed(self):
         timeLeft = self.gameEndTime - time.time()
-        # if 200 < timeLeft <= 300 and self.gear < 1:
-        #     self.set_gear(1)            
-        # if 100 < timeLeft <= 200 and self.gear < 2:
-        #     self.set_gear(2)
-        # if 50 < timeLeft <= 100 and self.gear < 3:
-        #     self.set_gear(3)
-        if timeLeft <= 120 and self.gear < 4:
+        if timeLeft <= self.useHelperBotTime and self.gear < 4:
             self.set_gear(4)
 
-    def handle_opponent_move_result(self, captured_my_piece: bool, capture_square: Optional[Square], original=True):
-        if original and captured_my_piece: print(f"They captured a piece on {str(capture_square)}!")
-        self.updateSpeed()           
-        if original:
-            self.history[self.turn].append((captured_my_piece, capture_square, False))
-        if captured_my_piece:
-            self.playFromStartingMoves = False
+    def handle_opponent_move_result(self, captured_my_piece: bool, capture_square: Optional[Square]):
+        self.updateSpeed() 
+        
+        phase, turn = Phase.OPP_MOVE_RESULT, self.turn
+        self.stash.stash_boards(phase, turn, self.beliefState, self.maxInDist)
+        self.stash.add_history(turn, phase, (captured_my_piece, capture_square))
+
+        if self.firstTurn and self.color: self.firstTurn = False; return
+
+        print('\nOpponent moved, handling result...')
+        if captured_my_piece: print(f"They captured a piece on {str(capture_square)}!")
+
         t0 = time.time()
-        if self.useHelperBot:
-            self.helperBot.handle_opponent_move_result(captured_my_piece, capture_square)
-            return
-        self.moveStartTime = time.time()
-        if self.firstTurn and self.color:
-            self.firstTurn = False
-            return
-        if original: print('\nOpponent moved, handling result...')
+        if self.useHelperBot: self.helperBot.handle_opponent_move_result(captured_my_piece, capture_square); return
         try:
-            self.beliefState.opp_move_result_update(captured_my_piece, capture_square, maxTime=self.handleOppMoveMaxTime if original else 0.001)
-        except ValueError:
-            self._expand_stashed_boards(phase="handle_opponent_move_result")
-        if original: print(f"Handled opponent move result in {time.time()-t0} seconds.")
+            self.beliefState.opp_move_result_update(captured_my_piece, capture_square, maxTime=self.handleOppMoveMaxTime)
+        except EmptyBoardDist:
+            self.stash.add_possible_boards(self.beliefState, self.maxInDist)
+
+        self.stash.add_possible_boards(self.beliefState, self.maxInDist, urgent=False)
+
+        print(f"Handled opponent move result in {time.time() - t0} seconds.")
 
     def choose_sense(self, sense_actions: List[Square], move_actions: List[chess.Move], seconds_left: float) -> \
             Optional[Square]:
@@ -145,25 +137,32 @@ class GnashBot(Player):
         print(f"Chose a sensing action in {time.time()-t0} seconds.")
         return sense_move
 
-    def handle_sense_result(self, sense_result: List[Tuple[Square, Optional[chess.Piece]]], original=True):
+    def handle_sense_result(self, sense_result: List[Tuple[Square, Optional[chess.Piece]]]):
         self.updateSpeed()
-        if original:
-            self.history[self.turn].append((sense_result, False))
+
+        phase, turn = Phase.SENSE_RESULT, self.turn
+        self.stash.stash_boards(phase, turn, self.beliefState, self.maxInDist)
+        print("Stashed boards")
+        self.stash.add_history(turn, phase, (sense_result))
+        print("Added history")
+
+        print('Updating belief state after sense result...')
         t0 = time.time()
         if self.useHelperBot:
             self.helperBot.handle_sense_result(sense_result)
             return
         # print('\nSense result is', sense_result)
-        if original: print('Updating belief state after sense result...')
         try:
-            self.beliefState.sense_update(sense_result, maxTime = self.handleSenseMaxTime if original else 0.001)
-        except ValueError:
-            self._expand_stashed_boards(phase="handle_sense_result")
-        if original: print('Our updated belief dist is now as follows:')
-        if original: self.beliefState.display()
+            self.beliefState.sense_update(sense_result, maxTime = self.handleSenseMaxTime)
+        except EmptyBoardDist:
+            self.stash.add_possible_boards(self.beliefState, self.maxInDist)
+        self.stash.add_possible_boards(self.beliefState, self.maxInDist, urgent=False)
+
+        print('Our updated belief dist is now as follows:')
+        self.beliefState.display()
         bestKey = max(self.beliefState.myBoardDist, key=self.beliefState.myBoardDist.get)
-        if original: print(bestKey, self.beliefState.myBoardDist[bestKey])
-        if original: print(f"Handled sense result in {time.time()-t0} seconds.")
+        print(bestKey, self.beliefState.myBoardDist[bestKey])
+        print(f"Handled sense result in {time.time()-t0} seconds.")
 
     def choose_move(self, move_actions: List[chess.Move], seconds_left: float) -> Optional[chess.Move]:
         self.gameEndTime = time.time() + seconds_left
@@ -172,19 +171,7 @@ class GnashBot(Player):
         if self.useHelperBot:
             return self.helperBot.choose_move(move_actions, seconds_left)
         print(f"Choosing move with {self.gameEndTime - time.time()} seconds remaining...")
-        if self.playFromStartingMoves:
-            if self.color:
-                if len(self.whiteStartingMoves) > self.turn:
-                    move = self.whiteStartingMoves[self.turn]
-                else:
-                    self.playFromStartingMoves = False
-            else:
-                if len(self.blackStartingMoves) > self.turn:
-                    move = self.blackStartingMoves[self.turn]
-                else:
-                    self.playFromStartingMoves = False
-        if not self.playFromStartingMoves:
-            move = select_move(self.beliefState, maxTime=self.chooseMoveMaxTime)
+        move = select_move(self.beliefState, maxTime=self.chooseMoveMaxTime, useQuickMoveDist=self.useQuickMoveDist)
         print("MOVE:", move)
         if move == chess.Move.null():
             return None
@@ -192,36 +179,38 @@ class GnashBot(Player):
         return move
 
     def handle_move_result(self, requested_move: Optional[chess.Move], taken_move: Optional[chess.Move],
-                           captured_opponent_piece: bool, capture_square: Optional[Square], original=True):
-        if original and captured_opponent_piece: print(f"We captured a piece on {str(capture_square)}!")
+                           captured_opponent_piece: bool, capture_square: Optional[Square]):
+        phase, turn = Phase.OUR_MOVE_RESULT, self.turn
+        self.stash.stash_boards(phase, turn, self.beliefState, self.maxInDist)
+        self.stash.add_history(turn, phase, (requested_move, taken_move, captured_opponent_piece, capture_square))
+
         self.updateSpeed()
-        if original:
-            self.history[self.turn].append((requested_move, taken_move, captured_opponent_piece, capture_square, False))
+
         t0 = time.time()
+        print('Handling our move result:')
+        print('\nRequested move', requested_move, ', took move', taken_move)
+        if captured_opponent_piece: print(f"We captured a piece on {str(capture_square)}!")
         if self.useHelperBot:
             self.helperBot.handle_move_result(requested_move, taken_move, captured_opponent_piece, capture_square)
             return
-        if captured_opponent_piece:
-            self.playFromStartingMoves = False
-        if original: print('\nRequested move', requested_move, ', took move', taken_move)
-        if original: print('Updating belief state...')
         try:
-            result = self.beliefState.our_move_result_update(requested_move, taken_move, captured_opponent_piece, capture_square, maxTime=self.handleMoveMaxTime if original else .001)
+            result = self.beliefState.our_move_result_update(requested_move, taken_move, captured_opponent_piece, capture_square, maxTime=self.handleMoveMaxTime)
             if result == "won":
-                return
-        except ValueError:
-            self._expand_stashed_boards(phase="handle_move-result")
-        if original: print(f"Handled our move result in {time.time()-t0} seconds.")
+                assert False, f"WE JUST WON AGAINST {self.opponent_name}"
+        except EmptyBoardDist:
+            self.stash.add_possible_boards(self.beliefState, self.maxInDist)
+        self.stash.add_possible_boards(self.beliefState, self.maxInDist, urgent=False)
+        print(f"Handled our move result in {time.time()-t0} seconds.")
+        
         t1 = time.time()
-        if original: print('\nAnticipating opponent sense...')
+        print('\nAnticipating opponent sense...')
         try:
             self.beliefState.opp_sense_result_update()
-        except ValueError:
-            self._expand_stashed_boards(phase="handle_move_result")
-        if original: print(f"Handled anticipated opponent sensing action in {time.time()-t1} seconds.")
-        if original: self.turn += 1
-        if original: self._stash_boards(self.maxInDist)
-        if original: print("Waiting for opponent...")
+        except EmptyBoardDist:
+            self.stash.add_possible_boards(self.beliefState, self.maxInDist)
+        print(f"Handled anticipated opponent sensing action in {time.time()-t1} seconds.")
+        self.turn += 1
+        print("Waiting for opponent...")
 
     def handle_game_end(self, winner_color: Optional[Color], win_reason: Optional[WinReason],
                         game_history: GameHistory):
@@ -230,72 +219,3 @@ class GnashBot(Player):
         for engine_list in [moving_engines, [analysisEngine], extra_engines, [okayJustOneMore]]:
             for engine in engine_list:
                 engine.quit()
-
-    ##TODO: Avoid stashing board where 3 or fewer of their pieces have moved
-    def _stash_boards(self, maxToKeep):
-        if len(self.beliefState.myBoardDist.keys()) > self.maxInDist:
-            print(f"{len(self.beliefState.myBoardDist.keys())} boards, stashing boards...")
-        sortedFens = list(sorted(self.beliefState.myBoardDist, key=self.beliefState.myBoardDist.get, reverse=True))
-        mostLikelyBoards = sortedFens[:maxToKeep]
-        unlikelyBoards = sortedFens[maxToKeep:]
-        self.beliefState.stashedBoards[self.turn] = unlikelyBoards
-        for board in self.beliefState.stashedBoards[self.turn]:
-            del self.beliefState.oppBoardDists[board]
-        newMyBoardDist = {board: self.beliefState.myBoardDist[board] for board in mostLikelyBoards}
-        self.beliefState.myBoardDist = normalize(newMyBoardDist)
-        print(f"Now there are {len(self.beliefState.myBoardDist.keys())} boards")
-    
-    #If myBoardDist is empty, restock with possible boards
-    def _expand_stashed_boards(self, phase):
-        assert len(self.beliefState.myBoardDist.keys()) == 0, "stashed boards cannot be expanded when there are still boards in the distribution"
-        print(f"Ran out of boards, taking from stash in phase: {phase}...", flush=True)
-        turn = self.turn
-        while len(self.beliefState.stashedBoards[turn])==0 and turn >=0:
-            turn-=1
-        assert turn>0, f"{self.beliefState.stashedBoards} should not be empty"
-        # if all([len(self.beliefState.stashedBoards[t]) == 0 for t in range(turn)]):
-        #   print("No more reserve, using helper bot with possible board while we still can...")
-        #   self.useHelperBot = True
-        #   possibleBoard = self.beliefState.stashedBoards[turn].pop()
-        #   self.helperBot.handle_game_start(self.color, chess.Board(possibleBoard), self.opponent_name)
-
-
-        print(f"Found {len(self.beliefState.stashedBoards[turn])} stashed boards at turn {turn}, currently turn {self.turn}", flush=True)
-        selected = self.beliefState.stashedBoards[turn][:self.maxInDist]
-        self.beliefState.stashedBoards[turn] = self.beliefState.stashedBoards[turn][self.maxInDist:]
-        self.beliefState.myBoardDist = {fen: 1/len(selected) for fen in selected}
-        self.beliefState.oppBoardDists = {fen: {fen: 1.0} for fen in self.beliefState.myBoardDist}
-        while len(self.history[turn])>0:
-            print(f"Found {len(self.history[turn])}/3 pieces of history at turn {turn}")
-            assert len(self.history[turn][0]) == 3, self.history[turn]
-            # oppMoveResult, senseResult, moveResult = self.history[turn]
-            try:
-                self.handle_opponent_move_result(*self.history[turn][0])
-            except:
-                return
-            print("handled opponent move result,")
-            if len(self.history[turn]) == 1:
-                break
-            assert len(self.history[turn][1]) == 2, self.history[turn]
-            try:
-                self.handle_sense_result(*self.history[turn][1])
-            except:
-                return
-            print("handled sense result,")
-            if len(self.history[turn]) == 2:
-                break
-            # print(turn, self.turn, self.history[turn])
-            assert len(self.history[turn][2]) == 5, self.history[turn]
-            moveResult = self.history[turn][2]
-            try:
-                self.handle_move_result(*moveResult)
-            except:
-                return
-            print("and handled move result.")
-            turn += 1
-        print(f"Restored {len(self.beliefState.myBoardDist.keys())} boards")
-        if not self.useHelperBot and len(self.beliefState.myBoardDist) == 0:
-            self._expand_stashed_boards(phase=phase)
-        # self.beliefState.display()
-        # input()
-        

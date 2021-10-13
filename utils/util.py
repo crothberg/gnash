@@ -7,6 +7,8 @@ import os
 import gevent
 import time
 
+from utils.exceptions import EmptyBoardDist
+
 os.environ['STOCKFISH_EXECUTABLE'] = os.path.dirname(os.path.realpath(__file__)) + '/../stockfish/stockfish_14_x64_avx2.exe'
 STOCKFISH_ENV_VAR = 'STOCKFISH_EXECUTABLE'
 
@@ -35,7 +37,7 @@ def chunks(lst, n):
 
 def normalize(dist, adjust = False, giveToZeros=.10, raiseNum = 0):
     if len(dist) == 0:
-        raise(ValueError)
+        raise(EmptyBoardDist)
     total = sum(dist.values())
     if adjust and total == 0:
         total = len(dist)
@@ -82,7 +84,7 @@ def normalize_board_dist_helper(fen, dist, engine):
 ##SHOULD ONLY BE CALLED BY US
 def normalize_our_board_dist(dist, ourColor):
     if len(dist) == 0:
-        raise(ValueError)
+        raise(EmptyBoardDist)
     if len(dist) == 1:
         return normalize(dist, adjust=True)
     mostLikelyBoard = list(sorted(dist, key=dist.get, reverse=True))[0]

@@ -5,8 +5,9 @@ from utils.util import *
 from reconchess.utilities import revise_move
 import math
 import time
+from statistics import *
 
-def select_move(beliefState, maxTime) -> Move:
+def select_move(beliefState, maxTime, useQuickMoveDist=False) -> Move:
     topFen = list(beliefState.myBoardDist.keys())[0]
     board = chess.Board(topFen)
     if beliefState.myBoardDist[topFen] > .75:
@@ -21,21 +22,26 @@ def select_move(beliefState, maxTime) -> Move:
         if move != None and move.promotion != None and move.promotion != chess.KNIGHT:
             move.promotion = chess.QUEEN
         return move
-    moveDist = get_move_dist(beliefState.myBoardDist, maxTime=maxTime, actuallyUs=True)
+    if not useQuickMoveDist:
+        moveDist = get_move_dist(beliefState.myBoardDist, maxTime=maxTime, actuallyUs=True)
+    else:
+        moveDist = get_quick_move_dist(beliefState.myBoardDist, maxTime=maxTime, actuallyUs=True)
     topMoves = sorted(moveDist, key=moveDist.get, reverse=True)[:5]
     print([(move, moveDist[move]) for move in topMoves])
     move = topMoves[0]
     print(moveDist[move])
     if move != None and move.promotion != None and move.promotion != chess.KNIGHT:
         move.promotion = chess.QUEEN
-    return move
+    choices = normalize({move: moveDist[move] for move in topMoves}, adjust=True, giveToZeros=0, raiseNum=3)
+    print(choices)
+    return sample(choices)
     # return select_move_from_dist(beliefState.myBoardDist, maxTime)
 
 # def select_move_from_dist(boardDist, maxTime):
 #     move = sample(get_move_dist(boardDist, maxTime))
 #     return move
 
-def get_move_dist_helper_2(testMoves, sampleFen, legalMoveScores, actuallyUs):
+def get_move_dist_helper_2(testMoves, sampleFen, sampleFenProb, legalMoveScores, actuallyUs):
     sampleBoard = chess.Board(sampleFen)
     sampleBoard.clear_stack()
     sampleBoard.halfmove_clock = 0
@@ -125,27 +131,36 @@ def get_move_dist_helper_2(testMoves, sampleFen, legalMoveScores, actuallyUs):
         assert len(legalTestMoves) <= len(baseScores) <= len(legalTestMoves) + 1 + len(psuedoLegalOnly)
     silentCheckMoves, queenCheckMoves = get_silent_check_and_queenCheck_moves(sampleBoard)
     for move, score in baseScores.items():
-        isCapture = chess.Board.is_capture(sampleBoard, move)
         sampleBoard.push(move)
         if score == None:
-            score = max(0, min(1, legalMoveScores[move][1] + random.random()))
+            newBaseScore = max(0, min(1, legalMoveScores[move][1] + random.random()))
         else:
-            score = fix_base_score(score)
+            newBaseScore = fix_base_score(score)
+        if newBaseScore < .5:
+            newBaseScore /= 2
+        baseScores[move] = newBaseScore
+        sampleBoard.pop()
+    standardDev = stdev(baseScores.values()) if len(baseScores) >= 2 else 1
+    # print("Standard dev of base scores:", standardDev)
+    for move, score in baseScores.items():
+        sampleBoard.push(move)
+        isCapture = chess.Board.is_capture(sampleBoard, move)
         # #Minor penalty for taking a piece (and revealing information)
         # if isCapture and actuallyUs:
         #     score = max(0, score - .01)
         if move in silentCheckMoves:
-            score = min(1, score + (.35 if not actuallyUs else 0))
+            score = min(1, score + (2*standardDev if not actuallyUs else 0))
         if move in queenCheckMoves:
-            score = min(1, score + (.1 if not actuallyUs else .05))
+            score = min(1, score + (.5*standardDev if not actuallyUs else .2*standardDev))
         if not sampleBoard.king(sampleBoard.turn):
-            score += .75
+            # score += .75
+            score = 1
         #Major penalty for moving our king past the second rank
         if actuallyUs and (2 <= chess.square_rank(sampleBoard.king(not sampleBoard.turn)) <= 5):
-            score = max(0, score - .2)
+            score = max(0, score - 2*standardDev)
         #Massive penalty for moving/leaving king in check on any board
-        if sampleBoard.attackers(sampleBoard.turn, sampleBoard.king(not sampleBoard.turn)) and actuallyUs:
-            score = -1        
+        if sampleBoard.attackers(sampleBoard.turn, sampleBoard.king(not sampleBoard.turn)):
+            score = -1
         sampleBoard.pop()
         baseScores[move] = score
 
@@ -173,7 +188,7 @@ def get_move_dist_helper_2(testMoves, sampleFen, legalMoveScores, actuallyUs):
         else:
             timesSampled, avgScore = legalMoveScores[move]
             totalScore = timesSampled*avgScore
-            legalMoveScores[move][0] += 2
+            legalMoveScores[move][0] += 1 + 1*sampleFenProb
             legalMoveScores[move][1] = (totalScore)/legalMoveScores[move][0]
             # legalMoveScores[move][0] = 1000
             # legalMoveScores[move][1] = 0
@@ -231,7 +246,7 @@ def get_move_dist(boardDist, maxTime, movesToConsider = None, actuallyUs = False
             # time.sleep(.05)
             # if stockfishMove not in testMoves:
             #     testMoves += [stockfishMove]
-        get_move_dist_helper_2(testMoves, sampleFen, legalMoveScores, actuallyUs)
+        get_move_dist_helper_2(testMoves, sampleFen, boardDist[sampleFen], legalMoveScores, actuallyUs)
         # allChunks = chunks(testMoves, NUM_ENGINES)
         # for moves in allChunks:
             # get_move_dist_helper(move, sampleFen, legalMoveScores, analysis_engines[i%len(analysis_engines)], actuallyUs)
@@ -249,39 +264,26 @@ def get_move_dist(boardDist, maxTime, movesToConsider = None, actuallyUs = False
     # print(legalMoveScores)
     t = time.time()
     # probs = normalize({move: legalMoveScores[move][1]**8 for move in legalMoves}, adjust=True)
-    probs = normalize({move: legalMoveScores[move][1] for move in legalMoves}, adjust=True, giveToZeros=.2, raiseNum=5)
+    probs = normalize({move: legalMoveScores[move][1] for move in legalMoves}, adjust=True, raiseNum=7, giveToZeros=.005)
     
-    # print(probs)
-    bestMove = max(probs, key=probs.get)
-    bestMoveScore = probs[bestMove]
-    topMoves = {bestMove}
-    #If all top moves are the same score (e.g. because they're all lost)
-    # use the stockfish method
-    for move in sorted(probs, key=probs.get, reverse=True):
-        if abs(bestMoveScore - probs[move]) < .05:
-            topMoves.add(move)
-        else:
-            break
-    if len(topMoves) > 1:
-        print("Breaking tie by using stockfish with the following moves:")
-        print(list((move, legalMoveScores[move], probs[move]) for move in topMoves))
-        probs = get_quick_move_dist(boardDist, maxTime=min(1.0, maxTime/2), movesToConsider = topMoves, actuallyUs=True)
-        for move in legalMoves:
-            if move not in probs:
-                probs[move] = 0
-        normalize(probs)
-        # probs = normalize({move: probs[move]**3 for move in probs}, adjust=True, giveToZeros=.2)
-        # probs = normalize({move: probs[move] for move in probs}, adjust=True, giveToZeros=.2, raiseNum=3)
-
-    # impossible_move_set = set(probs.keys()).difference(set(move_actions(chess.Board(list(boardDist.keys())[0]))))
-    # It should be okay for the opponent to attempt an impossible move, no? Why do we raise this error?
-    # if len(impossible_move_set) > 1:# and len(boardDist) < 10:
-    #     print('IMPOSSIBLE MOVE SET:', impossible_move_set)
-    #     assert False
-    # print(probs)
-    # print(f"Time after iters was {time.time()-t}")
-    # print(actuallyUs, probs)
-    # print(legalMoveScores)
+    # bestMove = max(probs, key=probs.get)
+    # bestMoveScore = probs[bestMove]
+    # topMoves = {bestMove}
+    # #If all top moves are the same score (e.g. because they're all lost)
+    # # use the stockfish method
+    # for move in sorted(probs, key=probs.get, reverse=True):
+    #     if abs(bestMoveScore - probs[move]) < .001: #< .05:
+    #         topMoves.add(move)
+    #     else:
+    #         break
+    # if len(topMoves) > 1:
+    #     print("Breaking tie by using stockfish with the following moves:")
+    #     print(list((move, legalMoveScores[move], probs[move]) for move in topMoves))
+    #     probs = get_quick_move_dist(boardDist, maxTime=min(1.0, maxTime/2), movesToConsider = topMoves, actuallyUs=True)
+    #     for move in legalMoves:
+    #         if move not in probs:
+    #             probs[move] = 0
+    #     normalize(probs)
     return probs
 
 def get_quick_move_dist(boardDist, maxTime, movesToConsider = None, actuallyUs = False):
@@ -325,16 +327,11 @@ def choose_n_moves(moveScores, n, c, totalTriesSoFar, fen):
     board = chess.Board(fen)
     allMoves = get_all_moves(board)
     sorted_moves = sorted(moveScores, key=lambda move: -100 if move not in allMoves else (moveScores[move][1] + c*(math.log(totalTriesSoFar)/moveScores[move][0])**.5), reverse=True)
-    topMove = sorted_moves[0]
-    #if all moves would leave us in check on at least one board, reset
-    if moveScores[topMove][0] > 100:
-        for move in moveScores:
-            moveScores[move] = [.001, 0]
-    nMoves = {move for move in sorted_moves[:n] if move in allMoves and moveScores[move][0] <= 100}
+    nMoves = {move for move in sorted_moves[:n] if move in allMoves}
     return nMoves
 
 def choose_1_board(fenCounts, dist):
-    fen = max(dist, key=lambda x: (dist[x]**2.5)/(fenCounts[x]**2))
+    fen = max(dist, key=lambda x: (dist[x]**2.5)/(fenCounts[x]**1.25))
     fenCounts[fen] += 1
     # print(f"sampled board {fen}")
     return fen
@@ -349,6 +346,8 @@ def get_stockfish_move(fen : str, maxTime, engine, movesToConsider=None, actuall
         if enemy_king_attackers:
             attacker_square = enemy_king_attackers.pop()
             return chess.Move(attacker_square, enemy_king_square)
+    else:
+        return None
     move = None
     if movesToConsider != None:
         try:
