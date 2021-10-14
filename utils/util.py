@@ -3,6 +3,7 @@ import chess
 import chess.engine
 import random
 from reconchess.utilities import *
+from utils.scoring_utils import *
 import os
 import gevent
 import time
@@ -77,10 +78,8 @@ def normalize(dist, adjust = False, giveToZeros=.10, raiseNum = 0):
     return dist
 
 def normalize_board_dist_helper(fen, dist, engine):
-    try:
-        dist[fen] = 1 - evaluate_board_to_play(chess.Board(fen), engine, time=.15)
-    except:
-        dist[fen] = random.random()
+    board = chess.Board(fen)
+    dist[fen] = score(board, .15, engine, not board.turn)
 ##SHOULD ONLY BE CALLED BY US
 def normalize_our_board_dist(dist, ourColor):
     if len(dist) == 0:
@@ -172,50 +171,6 @@ def get_pseudo_legal_moves(fens):
     return legalMoves
 
 GOOD_SENSING_SQUARES = [i*8 + j for i in range(1,7) for j in range(1,7)]
-
-##TODO: Find a better way to avoid leaving our king in check
-# Score of the person who just played
-# return score [.1, .9] if not lost, 0 if lost, 1 if won
-def evaluate_board(board: chess.Board, engine, time=.05):
-    color = board.turn
-    board.clear_stack()
-    board.turn = color
-    if board.king(board.turn) == None:
-        return 1
-    # if (board.attackers(board.turn, board.king(not board.turn))):
-    #     return 0
-    baseScore = None
-    try:
-        baseScore = engine.analyse(board, chess.engine.Limit(time=time))['score'].pov(not board.turn).score(mate_score=5000)
-    except:
-        return None
-    baseScore = baseScore/5000
-    score = max(-.8, min(.8, baseScore))
-    score += (1-score)/2
-    return score
-
-def fix_base_score(score):
-    score = score/5000
-    score = max(-.8, min(.8, score))
-    score += (1-score)/2
-    return score
-
-#Score from the position of the person whose turn it is
-def evaluate_board_to_play(board: chess.Board, engine, time=0.15):
-    color = board.turn
-    board.clear_stack()
-    board.turn = color
-    if (board.attackers(board.turn, board.king(not board.turn)) or does_threaten_mate(board)):
-        return 1
-    baseScore = engine.analyse(board, chess.engine.Limit(time))['score'].pov(board.turn).score(mate_score=5000)
-    baseScore = baseScore/5000
-    score = max(-.6, min(.6, baseScore))
-    score += (1-score)/2 #score in [.2, .8]
-    if (board.attackers(not board.turn, board.king(board.turn))):
-        score = max(0, score-.05)
-    if (opp_threatens_mate(board)):
-        score = max(0, score-.1)
-    return score
 
 def without_pieces(board: chess.Board, color) -> chess.Board:
     """Returns a copy of `board` with the opponent's pieces removed."""

@@ -304,11 +304,13 @@ class BeliefState:
         endTime = time.time()
         # print(f"Checked invariants in {endTime - startTime} seconds")
 
-    def display(self):
+    def display(self, stash=None):
         print(f'\tMY BOARD DISTRIBUTION: ({len(self.myBoardDist)})')
         for fen, prob in self.myBoardDist.items():
             # if prob > .05:
             print('\t\t', fen, '\tprobability:', prob)
+        if stash != None:
+            print(f"Additional {len(stash)} boards stashed.")
         # print(f'\tOPP\'S BOARD DISTS ({len(self.oppBoardDists)}):')
         # for fen, dist in self.oppBoardDists.items():
         #     print('\t\t', fen)

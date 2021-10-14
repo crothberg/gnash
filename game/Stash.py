@@ -1,6 +1,5 @@
 from game.BeliefState import BeliefState
 from game.History import History
-# from utils.distributed_lock_2 import PriorityLock
 from utils.util import *
 from utils.history_utils import *
 import threading
@@ -9,9 +8,10 @@ class Stash:
     def __init__(self, color):
         self.levels = dict()
         self.lock = threading.BoundedSemaphore()
+        # self.secondaryLock = threading.BoundedSemaphore()
         self.color = color
         self.history = History()
-        self.work = True
+        self.kill = False
 
     def __len__(self):
         boards = 0
@@ -30,23 +30,22 @@ class Stash:
 
     def _background_improvements(self):
         print("Starting background processor...")
-        completedWork = True
-        while True:
-            if self.work:
-                acquired = self.lock.acquire()
-                assert acquired
-                assert completedWork
-                self.completedWork = False
-                self.improve_stash(maxAtATime=10, background=True)
-                self.lock.release()
-                completedWork = True
-                time.sleep(.1)
+        while not self.kill:
+            acquired = self.lock.acquire()
+            assert acquired
+            self.improve_stash(maxAtATime=10, background=True)
+            self.lock.release()
+            time.sleep(.25)
 
-    def start_background_processor(self, numProcessors):
-        # for _ in range(numProcessors):
-        #     thread = threading.Thread(target=self._background_improvements, name="processor")
-        #     thread.start()
-        pass
+    def start_background_processor(self):
+        thread = threading.Thread(target=self._background_improvements, name="processor")
+        thread.start()
+
+    def end_background_processor(self):
+        self.kill = True
+
+    ##TODO: Avoid stashing boards with pieces in starting positions (for bots that pass a lot right away)
+    ##TODO: Also take copy of best board (even if it becomes impossible later, we can still revive it for HelperBot)
     def stash_boards(self, phase : Phase, turn : int, beliefState : BeliefState, maxInDist : int):
         self.lock.acquire()
         boardsToKeep = list(sorted(beliefState.myBoardDist, key = beliefState.myBoardDist.get, reverse=True))[:maxInDist]
@@ -54,7 +53,8 @@ class Stash:
         for board in boardsToStash:
             beliefState.oppBoardDists.pop(board)
             beliefState.myBoardDist.pop(board)
-        normalize(beliefState.myBoardDist, adjust=True)
+        if len(beliefState.myBoardDist) > 0:
+            normalize(beliefState.myBoardDist, adjust=True)
         if turn not in self.levels: self.levels[turn] = dict() 
         self.levels[turn][phase] = self.get_boards_at_phase(phase, turn) + list(boardsToStash)
         
@@ -63,6 +63,7 @@ class Stash:
         if bonusPhase not in self.levels[bonusTurn]: self.levels[bonusTurn][bonusPhase] = []
         
         print(f"Stashed {len(boardsToStash)} boards")
+
         self.lock.release()
 
     def add_history(self, turn : int, phase : Phase, result):
@@ -100,8 +101,8 @@ class Stash:
     '''
     Warning: you must acquire a lock before calling this function.
     '''
-    def improve_stash(self, maxAtATime=200, background = False):
-        if not background: print(f"Improving stash up to {maxAtATime} boards at a time...")
+    def improve_stash(self, maxAtATime=600, background = False):
+        # if not background: print(f"Improving stash up to {maxAtATime} boards at a time...")
 
         beliefState = BeliefState(self.color)
         beliefState.myBoardDist = {}
@@ -134,19 +135,21 @@ class Stash:
             print(f"Found {len(beliefState.myBoardDist)} new possible boards!")
             print(self)
         else:
-            print(f"Moved boards from turn {turn} phase {phase} to turn {nextTurn} phase {nextPhase}")
-            currentPhase, currentTurn = self.history.get_current_phase_and_turn()
-            print(f"Currently on turn {currentTurn}, phase {currentPhase}")
+            print(f"Moved {len(boardsToAdvance)} boards from turn {turn} phase {phase} into {len(beliefState.myBoardDist)} in turn {nextTurn} phase {nextPhase}")
+            # currentPhase, currentTurn = self.history.get_current_phase_and_turn()
+            # print(f"Currently on turn {currentTurn}, phase {currentPhase}")
 
     '''
+    ##TODO: ADD TIME LIMIT!
     Note: adds in boards with prob 0
     '''
     def add_possible_boards(self, beliefState : BeliefState, numBoards : int, urgent = True):
+        assert len(self) > 0, "No boards remaining in stash!"
         self.lock.acquire()
         phase, turn = self.history.get_future_phase_and_turn()
         if urgent:
             while len(self.get_boards_at_phase(phase, turn)) == 0:
-                print("No up-to-date boards found, improving stash...")
+                # print("No up-to-date boards found, improving stash...")
                 # print(self)
                 self.improve_stash()
         else:

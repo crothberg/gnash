@@ -2,6 +2,7 @@ from chess import *
 import chess.engine
 from utils.types import *
 from utils.util import *
+import utils.scoring_utils as scorer
 from reconchess.utilities import revise_move
 import math
 import time
@@ -26,20 +27,17 @@ def select_move(beliefState, maxTime, useQuickMoveDist=False) -> Move:
         moveDist = get_move_dist(beliefState.myBoardDist, maxTime=maxTime, actuallyUs=True)
     else:
         moveDist = get_quick_move_dist(beliefState.myBoardDist, maxTime=maxTime, actuallyUs=True)
+    print(moveDist)
+    # input()
     topMoves = sorted(moveDist, key=moveDist.get, reverse=True)[:5]
     print([(move, moveDist[move]) for move in topMoves])
     move = topMoves[0]
     print(moveDist[move])
     if move != None and move.promotion != None and move.promotion != chess.KNIGHT:
         move.promotion = chess.QUEEN
-    choices = normalize({move: moveDist[move] for move in topMoves}, adjust=True, giveToZeros=0, raiseNum=3)
+    choices = normalize({move: moveDist[move] for move in topMoves}, adjust=True, giveToZeros=0, raiseNum=7)
     print(choices)
     return sample(choices)
-    # return select_move_from_dist(beliefState.myBoardDist, maxTime)
-
-# def select_move_from_dist(boardDist, maxTime):
-#     move = sample(get_move_dist(boardDist, maxTime))
-#     return move
 
 def get_move_dist_helper_2(testMoves, sampleFen, sampleFenProb, legalMoveScores, actuallyUs):
     sampleBoard = chess.Board(sampleFen)
@@ -74,7 +72,10 @@ def get_move_dist_helper_2(testMoves, sampleFen, sampleFenProb, legalMoveScores,
             # print("Made it here, found chess.Move.null() in either testMoves or revisedMoves")
             sampleBoardCopy = chess.Board(sampleFen)
             sampleBoardCopy.turn = not sampleBoardCopy.turn
-            baseScores[chess.Move.null()] = analysisEngine.analyse(sampleBoardCopy, chess.engine.Limit(.05))['score'].pov(not sampleBoardCopy.turn).score(mate_score=5000)
+            sampleBoardCopy.clear_stack()
+            nullScore = scorer.score(sampleBoardCopy, .05, analysisEngine, not sampleBoardCopy.turn)
+            # if actuallyUs: print(f"Null score for board {sampleFen}: {nullScore}")
+            baseScores[chess.Move.null()] = nullScore
     except Exception as e:
         print(str(e))
         print(f"failed to analyze null move with board {sampleFen}, returning...")
@@ -88,7 +89,8 @@ def get_move_dist_helper_2(testMoves, sampleFen, sampleFenProb, legalMoveScores,
             boardCopy = chess.Board(sampleFen)
             boardCopy.push(move)
             boardCopy.clear_stack()
-            baseScores[move] = analysisEngine.analyse(boardCopy, chess.engine.Limit(.05))['score'].pov(not boardCopy.turn).score(mate_score=5000)
+            moveScore = scorer.score(boardCopy, .01, analysisEngine, not boardCopy.turn)
+            baseScores[move] = moveScore
     except Exception as e:
         print(str(e))
         print(psuedoLegalOnly)
@@ -98,7 +100,8 @@ def get_move_dist_helper_2(testMoves, sampleFen, sampleFenProb, legalMoveScores,
         return
     if len(legalTestMoves) > 0:
         try:
-            if len(kingCaptures) == 0:
+            if False:
+            # if len(kingCaptures) == 0:
                 b = chess.Board(sampleFen)
                 b.clear_stack()
                 analysis = analysisEngine.analyse(b, chess.engine.Limit(time=.015 * len(legalTestMoves)), multipv = len(legalTestMoves), root_moves = legalTestMoves)
@@ -107,12 +110,25 @@ def get_move_dist_helper_2(testMoves, sampleFen, sampleFenProb, legalMoveScores,
             else:
                 for move in legalTestMoves:
                     boardCopy = chess.Board(sampleFen)
+                    isCapture = capture_square_of_move(boardCopy, move) != None
                     boardCopy.push(move)
                     boardCopy.clear_stack()
-                    analysis =  analysisEngine.analyse(boardCopy, chess.engine.Limit(.05))
-                    score = analysis['score']
-                    povScore = score.pov(not boardCopy.turn)
-                    baseScores[move] =povScore.score(mate_score=5000)
+                    primaryScore = scorer.score(boardCopy, .01, analysisEngine, not boardCopy.turn)
+                    if not actuallyUs and not isCapture:
+                        boardCopy.turn = not boardCopy.turn
+                        secondaryScore = scorer.score(boardCopy, .01, analysisEngine, boardCopy.turn)
+                        # print(f"Primary score for move {move} on board {sampleFen}: {primaryScore}")
+                        # print(f"Secondary score for move {move} on board {sampleFen}: {secondaryScore}")
+                        baseScores[move] = .5*primaryScore + .5*secondaryScore
+                    elif actuallyUs and not isCapture:
+                        boardCopy.turn = not boardCopy.turn
+                        secondaryScore = scorer.score(boardCopy, .01, analysisEngine, boardCopy.turn)
+                        # print(f"Primary score for move {move} on board {sampleFen}: {primaryScore}")
+                        # print(f"Secondary score for move {move} on board {sampleFen}: {secondaryScore}")
+                        baseScores[move] = .95*primaryScore + .05*secondaryScore
+                    else:
+                        baseScores[move] = primaryScore
+                    
         except Exception as e:
             print(e)
             print(f"failed in analyses with board {sampleFen}, returning...")
@@ -129,29 +145,17 @@ def get_move_dist_helper_2(testMoves, sampleFen, sampleFenProb, legalMoveScores,
             print(legalTestMoves, len(legalTestMoves))
             print(legalTestMoves.difference(baseScores))
         assert len(legalTestMoves) <= len(baseScores) <= len(legalTestMoves) + 1 + len(psuedoLegalOnly)
-    silentCheckMoves, queenCheckMoves = get_silent_check_and_queenCheck_moves(sampleBoard)
-    for move, score in baseScores.items():
-        sampleBoard.push(move)
-        if score == None:
-            newBaseScore = max(0, min(1, legalMoveScores[move][1] + random.random()))
-        else:
-            newBaseScore = fix_base_score(score)
-        if newBaseScore < .5:
-            newBaseScore /= 2
-        baseScores[move] = newBaseScore
-        sampleBoard.pop()
     standardDev = stdev(baseScores.values()) if len(baseScores) >= 2 else 1
-    # print("Standard dev of base scores:", standardDev)
     for move, score in baseScores.items():
         sampleBoard.push(move)
         isCapture = chess.Board.is_capture(sampleBoard, move)
         # #Minor penalty for taking a piece (and revealing information)
         # if isCapture and actuallyUs:
         #     score = max(0, score - .01)
-        if move in silentCheckMoves:
-            score = min(1, score + (2*standardDev if not actuallyUs else 0))
-        if move in queenCheckMoves:
-            score = min(1, score + (.5*standardDev if not actuallyUs else .2*standardDev))
+        # if move in silentCheckMoves:
+        #     score = min(1, score + (3.5*standardDev if not actuallyUs else 0))
+        # if move in queenCheckMoves:
+        #     score = min(1, score + (2*standardDev if not actuallyUs else .4*standardDev))
         if not sampleBoard.king(sampleBoard.turn):
             # score += .75
             score = 1
@@ -264,7 +268,7 @@ def get_move_dist(boardDist, maxTime, movesToConsider = None, actuallyUs = False
     # print(legalMoveScores)
     t = time.time()
     # probs = normalize({move: legalMoveScores[move][1]**8 for move in legalMoves}, adjust=True)
-    probs = normalize({move: legalMoveScores[move][1] for move in legalMoves}, adjust=True, raiseNum=7, giveToZeros=.005)
+    probs = normalize({move: legalMoveScores[move][1] for move in legalMoves}, adjust=True, raiseNum=5, giveToZeros=.005)
     
     # bestMove = max(probs, key=probs.get)
     # bestMoveScore = probs[bestMove]
