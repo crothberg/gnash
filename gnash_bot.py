@@ -49,6 +49,7 @@ class GnashBot(Player):
             # sys.stdout = open(f"gameLogs/{opponent_name}_{gameTimeStr}.txt","w")
 
         self.stash = Stash(self.color)
+        self.stash.start_background_processor()
 
         # self.baseurl = "http://127.0.0.1:5000"
         # self.gameId = hash(gameTimeStr)
@@ -269,3 +270,4 @@ class GnashBot(Player):
                     engine.quit()
                 except:
                     pass
+        self.stash.end_background_processor()

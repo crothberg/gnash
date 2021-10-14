@@ -48,13 +48,16 @@ class Stash:
     ##TODO: Also take copy of best board (even if it becomes impossible later, we can still revive it for HelperBot)
     def stash_boards(self, phase : Phase, turn : int, beliefState : BeliefState, maxInDist : int):
         self.lock.acquire()
+        # Keep boards up to maxInDist, remove the rest for stashing
         boardsToKeep = list(sorted(beliefState.myBoardDist, key = beliefState.myBoardDist.get, reverse=True))[:maxInDist]
         boardsToStash = set(beliefState.myBoardDist).difference(boardsToKeep)
         for board in boardsToStash:
             beliefState.oppBoardDists.pop(board)
             beliefState.myBoardDist.pop(board)
+        # Re-normalize our belief state, now that we've removed some of the boards
         if len(beliefState.myBoardDist) > 0:
             normalize(beliefState.myBoardDist, adjust=True)
+        # Add the boardsToStash to the current stash
         if turn not in self.levels: self.levels[turn] = dict() 
         self.levels[turn][phase] = self.get_boards_at_phase(phase, turn) + list(boardsToStash)
         
@@ -104,21 +107,25 @@ class Stash:
     def improve_stash(self, maxAtATime=600, background = False):
         # if not background: print(f"Improving stash up to {maxAtATime} boards at a time...")
 
+        # Create a new BeliefState to hold the boards taken from a stash
         beliefState = BeliefState(self.color)
         beliefState.myBoardDist = {}
         beliefState.oppBoardDists = {}
         beliefState.catchingUp = True
 
+        # Find the level of the stash we want to take boards from
         phase, turn = self.latest_phase_with_boards(excludeLast=True)
         if phase == None:
             if not background: print("Stash has no more boards requiring expansion!")
             return
+
+        # Take the boards from the stash and put them into our new BeliefState
         boardsToAdvance = set(self.get_boards_at_phase(phase, turn)[:maxAtATime])
         beliefState.myBoardDist = {b : 1/len(boardsToAdvance) for b in boardsToAdvance}
         beliefState.oppBoardDists = {b : {b : 1} for b in boardsToAdvance}
 
         assert self.history.has_history(phase, turn)
-
+        # Fast-forward the BeliefState one phase
         try:
             self.history.apply_history(beliefState, phase, turn)
         except EmptyBoardDist:
@@ -127,8 +134,10 @@ class Stash:
 
         beliefState._check_invariants()
         
+        # Put the fast-forwarded belief state up one phase
         nextPhase, nextTurn = get_next_phase_and_turn(phase, turn)
         self.levels[nextTurn][nextPhase] += list(sorted(beliefState.myBoardDist, key=beliefState.myBoardDist.get, reverse=True))
+        # Remove from the last phase the boards we just moved up a phase
         self.levels[turn][phase] = list(set(self.levels[turn][phase]).difference(set(boardsToAdvance)))
 
         if (nextPhase, nextTurn) == self.history.get_future_phase_and_turn() and len(beliefState.myBoardDist) > 0:
