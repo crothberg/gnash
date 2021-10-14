@@ -62,6 +62,8 @@ class Stash:
         if bonusTurn not in self.levels: self.levels[bonusTurn] = dict()
         if bonusPhase not in self.levels[bonusTurn]: self.levels[bonusTurn][bonusPhase] = []
         
+        if len(boardsToStash) > 0:
+            assert len(boardsToKeep) == maxInDist == len(beliefState.myBoardDist)
         print(f"Stashed {len(boardsToStash)} boards")
 
         self.lock.release()

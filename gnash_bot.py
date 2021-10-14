@@ -25,14 +25,13 @@ import requests
 ##TODO: Add MoveSelector class that can be instantiated (one for us, one for them (in beliefState))
 class GnashBot(Player):
 
-    def __init__(self, useQuickMoveDist=False, isTest = False):
+    def __init__(self, isTest = False):
         self.color = None
         self.board = None
         self.beliefState = None
         self.firstTurn = True
         self.moveStartTime = None
         self.isTest = isTest
-        self.useQuickMoveDist= useQuickMoveDist
         self.helperBot = HelperBot()
         self.useHelperBot = False
         self.useHelperBotTime = 120
@@ -43,11 +42,12 @@ class GnashBot(Player):
         print(f"PLAYING {opponent_name} AS {'WHITE' if color else 'BLACK'}! Let's go!")
 
         now = datetime.datetime.now()
-        # gameTimeStr = f"{now.date()}_{now.hour}_{now.minute}_{now.second}"
-        # if not self.isTest and opponent_name not in {"moveFinder", "senseFinder"}:
-            # sys.stdout = open(f"gameLogs/{opponent_name}_{gameTimeStr}.txt","w")
+        gameTimeStr = f"{now.date()}_{now.hour}_{now.minute}_{now.second}"
+        if not self.isTest and opponent_name not in {"moveFinder", "senseFinder"}:
+            sys.stdout = open(f"gameLogs/{opponent_name}_{gameTimeStr}.txt","w")
 
         self.stash = Stash(self.color)
+        self.stash.start_background_processor()
 
         # self.baseurl = "http://127.0.0.1:5000"
         # self.gameId = hash(gameTimeStr)
@@ -55,27 +55,29 @@ class GnashBot(Player):
         # requests.post(f"{self.baseurl}/start/{self.gameId}", json={"color":self.color})
 
         self.gameEndTime = time.time() + 900
-        if opponent_name in {"Oracle", "StrangeFish2"}:
-            self.useQuickMoveDist = True
-        if opponent_name in {"random", "RandomBot"}:
-            self.set_gear(4 if not self.isTest else 0)
-        else:
-            self.set_gear(0)
 
-        self.moveSelector = MoveSelector(actuallyUs=True, gambleFactor=.1, timePerMove=self.chooseMoveMaxTime)
+        self.set_gear(0)
+
+        self.moveSelector = MoveSelector(actuallyUs=True, gambleFactor=.02, timePerMove=self.chooseMoveMaxTime)
         oppMoveSelector = MoveSelector(actuallyUs=False, gambleFactor=.3, timePerMove=None)
         if opponent_name in {"attacker", "AttackBot"}:
             oppMoveSelector.gambleFactor = 1
+            self.moveSelector.gambleFactor = .2
         if opponent_name in {"penumbra"}:
             oppMoveSelector.gambleFactor = .7
         if opponent_name in {"Fianchetto"}:
             oppMoveSelector.gambleFactor = .5
         if opponent_name in {"Oracle", "StrangeFish2"}:
-            oppMoveSelector.gambleFactor = .2
+            oppMoveSelector.gambleFactor = .05
         if opponent_name in {"TroutBot, trout"}:
-            oppMoveSelector.gambleFactor = .1
+            oppMoveSelector.gambleFactor = .01
 
         self.beliefState = BeliefState(color, board.fen(), self.moveSelector, oppMoveSelector)
+
+        if opponent_name in {"random", "RandomBot"}:
+            self.set_gear(4 if not self.isTest else 0)
+        else:
+            self.set_gear(0)
 
     def set_gear(self, gear):
         self.gear = gear
@@ -269,3 +271,4 @@ class GnashBot(Player):
                     engine.quit()
                 except:
                     pass
+        self.stash.end_background_processor()
