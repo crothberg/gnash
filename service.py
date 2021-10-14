@@ -62,8 +62,12 @@ def get_possible_boards(gameId):
         beliefState.myBoardDist = {}
         beliefState.oppBoardDists = {}
         numBoards = request.json["numBoards"]
-        stash.add_possible_boards(beliefState, numBoards)
-        return jsonify({"fens":list(beliefState.myBoardDist.keys())})
+        timeRemaining = float(request.json["extraTime"])
+        rescueBoard = stash.add_possible_boards(beliefState, numBoards, urgent=True, timeRemaining=timeRemaining)
+        if rescueBoard == None:
+            return jsonify({"useHelperBot": False, "fens":list(beliefState.myBoardDist.keys())})
+        else:
+            return jsonify({"useHelperBot":True, "helperBotFen": rescueBoard})
     except:
         return jsonify({"fens":[]})
 
@@ -73,21 +77,18 @@ def stash_boards(gameId, turn, phase):
         turn, phase = int(turn), Phase(int(phase))
         stash = stashes[gameId]
         boards = request.json["boardsToStash"]
+        bestBoard = request.json["bestBoard"]
         beliefState = BeliefState(stash.color)
         beliefState.myBoardDist = {b: 1/len(b) for b in boards}
         beliefState.oppBoardDists = {b : {b : 1} for b in boards}
-        stash.stash_boards(phase, turn, beliefState, 0)
+        stash.stash_boards(phase, turn, beliefState, 0, bestBoard = bestBoard)
         return jsonify({"Error":None})
     except:
         return
 
 @app.route("/game_over/<gameId>", methods = ['POST'])
 def end_game(gameId):
-    try:
-        stashes[gameId].end_background_processor()
-        return jsonify({"Error":None})
-    except:
-        return
+    return jsonify({"Error":None})
         
 if __name__ == "__main__":
     app.run(debug=False)

@@ -1,0 +1,5 @@
+*.pyc
+
+gnash_bot.py
+
+gameLogs

@@ -36,6 +36,7 @@ class GnashBot(Player):
         self.useHelperBot = False
         self.useHelperBotTime = 120
         self.turn = 0
+        self.useLocal = True
 
     def handle_game_start(self, color: Color, board: chess.Board, opponent_name: str):
         self.color, self.board, self.opponent_name = color, board, opponent_name
@@ -49,7 +50,7 @@ class GnashBot(Player):
         # self.stash = Stash(self.color)
         # self.stash.start_background_processor()
 
-        self.baseurl = "https://e68a-130-44-139-212.ngrok.io"
+        self.baseurl = "http://127.0.0.1:5000/" if self.useLocal else ""
         self.gameId = hash(gameTimeStr)
 
         requests.post(f"{self.baseurl}/start/{self.gameId}", json={"color":self.color})
@@ -60,6 +61,8 @@ class GnashBot(Player):
 
         self.moveSelector = MoveSelector(actuallyUs=True, gambleFactor=.02, timePerMove=self.chooseMoveMaxTime)
         oppMoveSelector = MoveSelector(actuallyUs=False, gambleFactor=.3, timePerMove=None)
+        if opponent_name in {"random", "RandomBot"}:
+            self.moveSelector.gambleFactor = 1
         if opponent_name in {"attacker", "AttackBot"}:
             oppMoveSelector.gambleFactor = 1
             self.moveSelector.gambleFactor = .2
@@ -67,9 +70,9 @@ class GnashBot(Player):
             oppMoveSelector.gambleFactor = .7
         if opponent_name in {"Fianchetto"}:
             oppMoveSelector.gambleFactor = .5
-        if opponent_name in {"Oracle", "StrangeFish2"}:
+        if opponent_name in {"StrangeFish2"}:
             oppMoveSelector.gambleFactor = .05
-        if opponent_name in {"TroutBot, trout"}:
+        if opponent_name in {"TroutBot, trout, Oracle"}:
             oppMoveSelector.gambleFactor = .01
 
         self.beliefState = BeliefState(color, board.fen(), self.moveSelector, oppMoveSelector)
@@ -121,14 +124,16 @@ class GnashBot(Player):
             self.set_gear(4)
 
     def stash_and_add_history(self, phase : Phase, turn : int, history : tuple):
+        if self.useHelperBot: return
         boardsToKeep = list(sorted(self.beliefState.myBoardDist, key = self.beliefState.myBoardDist.get, reverse=True))[:self.maxInDist]
+        bestBoard = boardsToKeep[0]
         boardsToStash = set(self.beliefState.myBoardDist).difference(boardsToKeep)
         for board in boardsToStash:
             self.beliefState.oppBoardDists.pop(board)
             self.beliefState.myBoardDist.pop(board)
         normalize(self.beliefState.myBoardDist, adjust=True, giveToZeros=0)
         print("Sending new boards...")
-        requests.post(f"{self.baseurl}/stash_boards/{self.gameId}/{turn}/{phase.value}", json = {"boardsToStash": list(boardsToStash)})
+        requests.post(f"{self.baseurl}/stash_boards/{self.gameId}/{turn}/{phase.value}", json = {"boardsToStash": list(boardsToStash), "bestBoard": bestBoard})
         print("Sending new boards completed.")
 
         print("Sending new history...")
@@ -147,12 +152,19 @@ class GnashBot(Player):
     def get_new_boards(self):
         # self.stash.add_possible_boards(self.beliefState, self.maxInDist)        
         print("Sending request for new boards...")
-        result = requests.post(f"{self.baseurl}/get_possible_boards/{self.gameId}", json={"numBoards":self.maxInDist})
-        boards = result.json()["fens"]
-        self.beliefState.myBoardDist = {b: 1/len(boards) for b in boards}
-        self.beliefState.oppBoardDists = {b: {b:1.0} for b in boards}
-        print(f"Received {len(boards)} boards in response")
-        self.beliefState._check_invariants()
+        extraTime = (self.gameEndTime - time.time()) - self.useHelperBotTime 
+        result = requests.post(f"{self.baseurl}/get_possible_boards/{self.gameId}", json={"numBoards":self.maxInDist, "extraTime":extraTime}).json()
+        if result["useHelperBot"]:
+            helperBotBoard = chess.Board(result["helperBotFen"])
+            print(f"Helper bot invoked with board {helperBotBoard.fen()}")
+            self.useHelperBot = True
+            self.helperBot.handle_game_start(self.color, helperBotBoard, self.opponent_name)
+        else:
+            boards = result["fens"]
+            self.beliefState.myBoardDist = {b: 1/len(boards) for b in boards}
+            self.beliefState.oppBoardDists = {b: {b:1.0} for b in boards}
+            print(f"Received {len(boards)} boards in response")
+            self.beliefState._check_invariants()
 
     def handle_opponent_move_result(self, captured_my_piece: bool, capture_square: Optional[Square]):
         self.updateSpeed() 
@@ -271,4 +283,9 @@ class GnashBot(Player):
                     engine.quit()
                 except:
                     pass
+        if self.useHelperBot:
+            try:
+                self.helperBot.engine.quit()
+            except:
+                pass
         # self.stash.end_background_processor()

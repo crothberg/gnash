@@ -1,0 +1,5 @@
+chess==1.6.1
+Flask==2.0.2
+gevent==21.8.0
+requests==2.26.0
+reconchess==1.6.8

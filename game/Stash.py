@@ -1,5 +1,6 @@
 from game.BeliefState import BeliefState
 from game.History import History
+from helper_bot import HelperBot
 from utils.util import *
 from utils.history_utils import *
 import threading
@@ -12,6 +13,8 @@ class Stash:
         self.color = color
         self.history = History()
         self.kill = False
+        self.lastHistoryAddedTime = time.time()
+        self.rescue = None
 
     def __len__(self):
         boards = 0
@@ -30,10 +33,10 @@ class Stash:
 
     def _background_improvements(self):
         print("Starting background processor...")
-        while not self.kill:
+        while not self.kill and (time.time()-self.lastHistoryAddedTime < 1000):
             acquired = self.lock.acquire()
             assert acquired
-            self.improve_stash(maxAtATime=10, background=True)
+            self.improve_stash(maxAtATime=30, background=True)
             self.lock.release()
             time.sleep(.25)
 
@@ -46,10 +49,17 @@ class Stash:
 
     ##TODO: Avoid stashing boards with pieces in starting positions (for bots that pass a lot right away)
     ##TODO: Also take copy of best board (even if it becomes impossible later, we can still revive it for HelperBot)
-    def stash_boards(self, phase : Phase, turn : int, beliefState : BeliefState, maxInDist : int):
+    def stash_boards(self, phase : Phase, turn : int, beliefState : BeliefState, maxInDist : int, bestBoard = None):
         self.lock.acquire()
         # Keep boards up to maxInDist, remove the rest for stashing
         boardsToKeep = list(sorted(beliefState.myBoardDist, key = beliefState.myBoardDist.get, reverse=True))[:maxInDist]
+        # The service uses maxInDist=0 because it only gets the boards that need to be stashed:
+        if maxInDist == 0:
+            assert bestBoard is not None
+            topBoard = bestBoard
+        else:
+            topBoard = boardsToKeep[0]
+        self.rescue = (turn, phase, topBoard)
         boardsToStash = set(beliefState.myBoardDist).difference(boardsToKeep)
         for board in boardsToStash:
             beliefState.oppBoardDists.pop(board)
@@ -68,11 +78,11 @@ class Stash:
         if len(boardsToStash) > 0:
             assert len(boardsToKeep) == maxInDist == len(beliefState.myBoardDist)
         print(f"Stashed {len(boardsToStash)} boards")
-
-        self.lock.release()
+        ##Don't release until after history is added...
 
     def add_history(self, turn : int, phase : Phase, result):
-        self.lock.acquire()
+        self.lastHistoryAddedTime = time.time()
+        ##No need to acquire here since lock was acquired during stash_boards
         self.history.add_history(turn, phase, result)
         self.lock.release()
 
@@ -154,15 +164,29 @@ class Stash:
     ##TODO: ADD TIME LIMIT!
     Note: adds in boards with prob 0
     '''
-    def add_possible_boards(self, beliefState : BeliefState, numBoards : int, urgent = True):
+    def add_possible_boards(self, beliefState : BeliefState, numBoards : int, urgent = True, timeRemaining = None):
         assert len(self) > 0, "No boards remaining in stash!"
+        if urgent: assert timeRemaining != None
+
         self.lock.acquire()
         phase, turn = self.history.get_future_phase_and_turn()
         if urgent:
+            endTime = time.time() + timeRemaining
             while len(self.get_boards_at_phase(phase, turn)) == 0:
                 # print("No up-to-date boards found, improving stash...")
                 # print(self)
-                self.improve_stash()
+                if time.time() > endTime:
+                    self.end_background_processor()
+                    rescueTurn, rescuePhase, board = self.rescue
+                    targetPhase, targetTurn = self.history.get_future_phase_and_turn()
+                    helperBot = HelperBot()
+                    helperBot.handle_game_start(self.color, board, "")
+                    while (rescuePhase, rescueTurn) != (targetPhase, targetTurn):
+                        rescuePhase, rescueTurn = get_next_phase_and_turn(rescuePhase, rescueTurn)
+                        self.history.apply_helper_bot_history(helperBot, rescuePhase, rescueTurn)
+                    return helperBot.board.fen()
+                else:
+                    self.improve_stash()
         else:
             if len(self.get_boards_at_phase(phase, turn)) == 0:
                 self.lock.release()
@@ -179,7 +203,5 @@ class Stash:
                 beliefState.myBoardDist[board] = 0
                 beliefState.oppBoardDists[board] = {board: 1}
         normalize(beliefState.myBoardDist, adjust=True)
-
-        return possibleBoards
 
 

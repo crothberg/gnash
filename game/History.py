@@ -40,6 +40,7 @@ class History:
     def apply_history(self, beliefState : BeliefState, phase : Phase, turn: int):
         assert self.has_history(phase, turn)
         history = self.history[turn][phase]
+
         if phase == Phase.OPP_MOVE_RESULT:
             captured_my_piece, capture_square = history
             beliefState.opp_move_result_update(captured_my_piece, capture_square, maxTime = 0.001)
@@ -49,3 +50,17 @@ class History:
         elif phase == Phase.OUR_MOVE_RESULT:
             requested_move, taken_move, captured_opponent_piece, capture_square = history
             beliefState.our_move_result_update(requested_move, taken_move, captured_opponent_piece, capture_square, maxTime = .001)
+
+    def apply_helper_bot_history(self, helperBot, phase, turn):
+        assert self.has_history(phase, turn)
+        history = self.history[turn][phase]
+
+        if phase == Phase.OPP_MOVE_RESULT:
+            captured_my_piece, capture_square = history
+            helperBot.handle_opponent_move_result(captured_my_piece, capture_square)
+        elif phase == Phase.SENSE_RESULT:
+            senseResult = history
+            helperBot.handle_sense_result(senseResult)
+        elif phase == Phase.OUR_MOVE_RESULT:
+            requested_move, taken_move, captured_opponent_piece, capture_square = history
+            helperBot.handle_move_result(requested_move, taken_move, captured_opponent_piece, capture_square)
