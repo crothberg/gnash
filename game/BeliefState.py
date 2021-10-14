@@ -1,12 +1,13 @@
+from game.MoveSelector import MoveSelector
 from collections import defaultdict
 from strategy.select_sense import select_sense
-from strategy.select_move import *
-from utils.util import normalize, simulate_sense
+from utils.util import *
 from reconchess.utilities import revise_move
+import gevent
 import chess
 
 class BeliefState:
-    def __init__(self, color, fen = chess.STARTING_FEN):
+    def __init__(self, color, fen = chess.STARTING_FEN, moveSelector = None, oppMoveSelector = None):
         self.color = color
         #belief distribution over possible boards
         self.myBoardDist = {fen: 1} #Map<fen, probability>
@@ -16,6 +17,10 @@ class BeliefState:
         self.oppBoardDists = {fen: {fen: 1}} #Map<fen, Map<fen, prob>)
 
         self.catchingUp = False
+
+        self.moveSelector = moveSelector or MoveSelector(actuallyUs=True, gambleFactor=.1, timePerMove=5)
+        self.oppMoveSelector = oppMoveSelector or MoveSelector(actuallyUs=False, gambleFactor=.3, timePerMove=None)
+        self.believedMoveSelector = MoveSelector(actuallyUs=True, gambleFactor=.3, timePerMove=None)
 
     def sense_update_helper(fen, senseResult, impossibleBoards):
         board = chess.Board(fen)
@@ -54,7 +59,7 @@ class BeliefState:
         self._check_invariants()
 
     def opp_move_result_update_helper(self, fen, timeShare, boardProb, newMyBoardDist, oppBoardDist, newOppBoardDists, capturedMyPiece, captureSquare):
-        moveProbs = get_move_dist(oppBoardDist, maxTime=timeShare)
+        moveProbs = self.oppMoveSelector.get_move_dist(oppBoardDist, maxTime=timeShare)
         for move, moveProb in moveProbs.items():
             board = chess.Board(fen)
             revisedMove = revise_move(board, move) if move != chess.Move.null() else chess.Move.null()
@@ -200,7 +205,7 @@ class BeliefState:
                 prob = self.myBoardDist[oldFen]
                 newOppBoardDist = defaultdict(float)
                 t = time.time()
-                believedMoveProbs = get_move_dist(oppBoardDist, maxTime=maxTime*prob, actuallyUs=True)
+                believedMoveProbs = self.believedMoveSelector.get_move_dist(oppBoardDist, maxTime=maxTime*prob)
                 for move in get_all_moves(chess.Board(oldFen)):
                     if move not in believedMoveProbs:
                         # print("MOVE NOT IN PROBS:", move)

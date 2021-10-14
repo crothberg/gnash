@@ -8,38 +8,7 @@ import math
 import time
 from statistics import *
 
-def select_move(beliefState, maxTime, useQuickMoveDist=False) -> Move:
-    topFen = list(beliefState.myBoardDist.keys())[0]
-    board = chess.Board(topFen)
-    if beliefState.myBoardDist[topFen] > .75:
-        enemy_king_square = board.king(not board.turn)
-        if enemy_king_square:
-            # if there are any ally pieces that can take king, execute one of those moves
-            enemy_king_attackers = board.attackers(board.turn, enemy_king_square)
-            if enemy_king_attackers:
-                attacker_square = enemy_king_attackers.pop()
-                return chess.Move(attacker_square, enemy_king_square)
-        move = okayJustOneMore.play(board, chess.engine.Limit(time=min(maxTime, 1.0))).move
-        if move != None and move.promotion != None and move.promotion != chess.KNIGHT:
-            move.promotion = chess.QUEEN
-        return move
-    if not useQuickMoveDist:
-        moveDist = get_move_dist(beliefState.myBoardDist, maxTime=maxTime, actuallyUs=True)
-    else:
-        moveDist = get_quick_move_dist(beliefState.myBoardDist, maxTime=maxTime, actuallyUs=True)
-    print(moveDist)
-    # input()
-    topMoves = sorted(moveDist, key=moveDist.get, reverse=True)[:5]
-    print([(move, moveDist[move]) for move in topMoves])
-    move = topMoves[0]
-    print(moveDist[move])
-    if move != None and move.promotion != None and move.promotion != chess.KNIGHT:
-        move.promotion = chess.QUEEN
-    choices = normalize({move: moveDist[move] for move in topMoves}, adjust=True, giveToZeros=0, raiseNum=7)
-    print(choices)
-    return sample(choices)
-
-def get_move_dist_helper_2(testMoves, sampleFen, sampleFenProb, legalMoveScores, actuallyUs):
+def get_move_dist_helper_2(testMoves, sampleFen, sampleFenProb, legalMoveScores, actuallyUs, gambleFactor):
     sampleBoard = chess.Board(sampleFen)
     sampleBoard.clear_stack()
     sampleBoard.halfmove_clock = 0
@@ -114,12 +83,13 @@ def get_move_dist_helper_2(testMoves, sampleFen, sampleFenProb, legalMoveScores,
                     boardCopy.push(move)
                     boardCopy.clear_stack()
                     primaryScore = scorer.score(boardCopy, .01, analysisEngine, not boardCopy.turn)
+                    gambleAmount = gambleFactor * .5
                     if not actuallyUs and not isCapture:
                         boardCopy.turn = not boardCopy.turn
                         secondaryScore = scorer.score(boardCopy, .01, analysisEngine, boardCopy.turn)
                         # print(f"Primary score for move {move} on board {sampleFen}: {primaryScore}")
                         # print(f"Secondary score for move {move} on board {sampleFen}: {secondaryScore}")
-                        baseScores[move] = .5*primaryScore + .5*secondaryScore
+                        baseScores[move] = (1-gambleAmount)*primaryScore + (gambleAmount)*secondaryScore
                     elif actuallyUs and not isCapture:
                         boardCopy.turn = not boardCopy.turn
                         secondaryScore = scorer.score(boardCopy, .01, analysisEngine, boardCopy.turn)
@@ -198,7 +168,7 @@ def get_move_dist_helper_2(testMoves, sampleFen, sampleFenProb, legalMoveScores,
             # legalMoveScores[move][1] = 0
     # print(sampleFen)
     # print(baseScores)
-def get_move_dist(boardDist, maxTime, movesToConsider = None, actuallyUs = False):
+def get_move_dist(boardDist, maxTime, actuallyUs, gambleFactor, movesToConsider = None):
     legalMoves = set(get_pseudo_legal_moves(boardDist))
     if movesToConsider != None:
         legalMoves = legalMoves.intersection(movesToConsider)
@@ -250,7 +220,7 @@ def get_move_dist(boardDist, maxTime, movesToConsider = None, actuallyUs = False
             # time.sleep(.05)
             # if stockfishMove not in testMoves:
             #     testMoves += [stockfishMove]
-        get_move_dist_helper_2(testMoves, sampleFen, boardDist[sampleFen], legalMoveScores, actuallyUs)
+        get_move_dist_helper_2(testMoves, sampleFen, boardDist[sampleFen], legalMoveScores, actuallyUs, gambleFactor)
         # allChunks = chunks(testMoves, NUM_ENGINES)
         # for moves in allChunks:
             # get_move_dist_helper(move, sampleFen, legalMoveScores, analysis_engines[i%len(analysis_engines)], actuallyUs)
