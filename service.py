@@ -29,6 +29,7 @@ def add_our_move_result(gameId, turn, phase):
         return jsonify({"Error":None})
     except:
         return
+
 @app.route("/add_opp_move_result/<gameId>/<turn>/<phase>", methods=['POST'])
 def add_opp_move_result(gameId, turn, phase):
     try:
@@ -39,6 +40,7 @@ def add_opp_move_result(gameId, turn, phase):
         return jsonify({"Error":None})
     except:
         return
+
 @app.route("/add_sense_result/<gameId>/<turn>/<phase>", methods=['POST'])
 def add_sense_result(gameId, turn, phase):
     try:
@@ -51,6 +53,7 @@ def add_sense_result(gameId, turn, phase):
         return jsonify({"Error":None})
     except:
         return
+
 @app.route("/get_possible_boards/<gameId>", methods=['POST'])
 def get_possible_boards(gameId):
     try:
@@ -77,6 +80,7 @@ def stash_boards(gameId, turn, phase):
         return jsonify({"Error":None})
     except:
         return
+
 @app.route("/game_over/<gameId>", methods = ['POST'])
 def end_game(gameId):
     try:
@@ -84,5 +88,6 @@ def end_game(gameId):
         return jsonify({"Error":None})
     except:
         return
+        
 if __name__ == "__main__":
     app.run(debug=False)
