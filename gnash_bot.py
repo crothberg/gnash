@@ -4,7 +4,6 @@ from reconchess import *
 from game.BeliefState import *
 from game.Stash import *
 from strategy.select_sense import select_sense
-from strategy.select_move import select_move
 from helper_bot import HelperBot
 import chess.engine
 from utils.exceptions import EmptyBoardDist
@@ -55,28 +54,29 @@ class GnashBot(Player):
         # self.gameId = hash(gameTimeStr)
 
         # requests.post(f"{self.baseurl}/start/{self.gameId}", json={"color":self.color})
- 
-        self.beliefState = BeliefState(color, board.fen())
 
         self.gameEndTime = time.time() + 900
         if opponent_name in {"Oracle", "StrangeFish2"}:
             self.useQuickMoveDist = True
         if opponent_name in {"random", "RandomBot"}:
-            self.set_gear(4 if not self.isTest else 3)
+            self.set_gear(4 if not self.isTest else 0)
         else:
             self.set_gear(0)
 
-        #scale of one to ten
-        self.aggressiveness = 1 
-        self.oppAgressiveness = 3
+        self.moveSelector = MoveSelector(actuallyUs=True, gambleFactor=.1, timePerMove=self.chooseMoveMaxTime)
+        oppMoveSelector = MoveSelector(actuallyUs=False, gambleFactor=.3, timePerMove=None)
         if opponent_name in {"attacker", "AttackBot"}:
-            self.oppAgressiveness = 10
+            oppMoveSelector.gambleFactor = 1
         if opponent_name in {"penumbra"}:
-            self.oppAgressiveness = 7
+            oppMoveSelector.gambleFactor = .7
         if opponent_name in {"Fianchetto"}:
-            self.oppAgressiveness = 5
+            oppMoveSelector.gambleFactor = .5
         if opponent_name in {"Oracle", "StrangeFish2"}:
-            self.oppAgressiveness = 2
+            oppMoveSelector.gambleFactor = .2
+        if opponent_name in {"TroutBot, trout"}:
+            oppMoveSelector.gambleFactor = .1
+
+        self.beliefState = BeliefState(color, board.fen(), self.moveSelector, oppMoveSelector)
 
     def set_gear(self, gear):
         self.gear = gear
@@ -217,7 +217,7 @@ class GnashBot(Player):
         if self.useHelperBot:
             return self.helperBot.choose_move(move_actions, seconds_left)
         print(f"Choosing move with {self.gameEndTime - time.time()} seconds remaining...")
-        move = select_move(self.beliefState, maxTime=self.chooseMoveMaxTime, useQuickMoveDist=self.useQuickMoveDist)
+        move = self.moveSelector.select_move(self.beliefState)
         print("MOVE:", move)
         if move == chess.Move.null():
             return None
