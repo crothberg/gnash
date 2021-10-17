@@ -8,6 +8,7 @@ from reconchess.utilities import revise_move
 import math
 import time
 from statistics import *
+import threading
 
 def get_move_dist_helper_2(testMoves, sampleFen, sampleFenProb, legalMoveScores, actuallyUs, gambleFactor):
     sampleBoard = chess.Board(sampleFen)
@@ -192,8 +193,8 @@ def get_move_dist(boardDist, maxTime, actuallyUs, gambleFactor, movesToConsider 
             assert abs(sum(probs.values()) - 1) < .001
             return probs
         return {move: 1/len(legalMoves) for move in legalMoves}
-    if maxTime <= .7:
-        return get_quick_move_dist(boardDist, maxTime, movesToConsider = movesToConsider, actuallyUs=actuallyUs)
+    # if maxTime <= .7:
+    #     return get_quick_move_dist(boardDist, maxTime, movesToConsider = movesToConsider, actuallyUs=actuallyUs)
     legalMoveScores = {move: [0.001, 0] for move in legalMoves} #[tries, averageScore]
     threatenMateMoves = get_threaten_mate_moves_dist(boardDist) if not actuallyUs else set()
     if movesToConsider != None:
@@ -233,7 +234,7 @@ def get_move_dist(boardDist, maxTime, actuallyUs, gambleFactor, movesToConsider 
     # print(totalTriesSoFar, totalTriesSoFar/(time.time()-startTime), time.time()-startTime)
     # print("Raw scores:")
     # print(legalMoveScores)
-    t = time.time()
+    # t = time.time()
     # probs = normalize({move: legalMoveScores[move][1]**8 for move in legalMoves}, adjust=True)
     probs = normalize({move: legalMoveScores[move][1] for move in legalMoves}, adjust=True, raiseNum=5, giveToZeros=.005)
     
@@ -320,7 +321,7 @@ def get_stockfish_move(fen : str, maxTime, movesToConsider=None, actuallyUs=Fals
     move = None
     if movesToConsider != None:
         try:
-            move = engines.play(board, chess.engine.Limit(time=maxTime), root_moves = movesToConsider).move
+            move = engines.play(board, maxTime, movesToConsider).move
         except Exception as e:
             print(e)
             print(f"ERROR GETTING MOVE FOR BOARD {board.fen()}")
@@ -328,7 +329,7 @@ def get_stockfish_move(fen : str, maxTime, movesToConsider=None, actuallyUs=Fals
             print(f"MovesToConsider: {movesToConsider}")
     else:
         try:
-            move = engines.play(board, chess.engine.Limit(time=maxTime)).move
+            move = engines.play(board, maxTime).move
         except Exception as e:
             print(e)
             print(f"ERROR GETTING MOVE FOR BOARD {board.fen()}")

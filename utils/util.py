@@ -3,14 +3,10 @@ import chess
 import random
 from reconchess.utilities import *
 from utils.scoring_utils import *
-import gevent
+from utils.parallelism_utils import *
 import time
 
 from utils.exceptions import EmptyBoardDist
-
-def chunks(lst, n):
-    for i in range(0, len(lst), n):
-        yield lst[i:i+n]
 
 def normalize(dist, adjust = False, giveToZeros=.10, raiseNum = 0):
     if len(dist) == 0:
@@ -79,7 +75,8 @@ def normalize_our_board_dist(dist, ourColor):
         t0 = time.time()
         # input("Here. Hit any key to continue")
         for chunk in chunks(list(dist.keys())):
-            gevent.joinall([gevent.spawn(normalize_board_dist_helper, fen, dist) for fen in chunk])
+            run_parallel(normalize_board_dist_helper, list((fen, dist) for fen in chunk))
+            # gevent.joinall([gevent.spawn(normalize_board_dist_helper, fen, dist) for fen in chunk])
         # print(dist)
         dist = normalize(dist, adjust=True, giveToZeros=.3, raiseNum=6)
         print(f"Completed after {time.time()-t0} seconds")

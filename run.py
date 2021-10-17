@@ -1,48 +1,55 @@
-import os
-import traceback, sys
-from reconchess import load_player, play_local_game, LocalGame
-import reconchess
-import chess
-from gnash_bot import GnashBot
-from reconchess.bots.trout_bot import TroutBot
-from reconchess.bots.random_bot import RandomBot
-from reconchess.bots.attacker_bot import AttackerBot
+from multiprocessing import freeze_support
 
-SECONDS_PER_PLAYER = 900
+def main():
+    import os
+    import traceback, sys
+    from reconchess import load_player, play_local_game, LocalGame
+    import reconchess
+    import chess
+    from gnash_bot import GnashBot
+    from reconchess.bots.trout_bot import TroutBot
+    from reconchess.bots.random_bot import RandomBot
+    from reconchess.bots.attacker_bot import AttackerBot
 
-game = LocalGame(SECONDS_PER_PLAYER)
+    SECONDS_PER_PLAYER = 900
 
-# white = GnashBot(isTest=True)
-# white = RandomBot()
-white = AttackerBot()
-# white = TroutBot()
-black = GnashBot(isTest=True)
+    game = LocalGame(SECONDS_PER_PLAYER)
 
-# opponent.handle_game_start(chess.WHITE, game.board.copy(), 'Trout')
-# gnash.handle_game_start(chess.BLACK, game.board.copy(), 'Gnash')
-# game.start()
+    # white = GnashBot(isTest=True)
+    # white = RandomBot()
+    white = AttackerBot()
+    # white = TroutBot()
+    black = GnashBot(isTest=True)
 
-# try:
-#     reconchess.play_move(game, opponent, game.move_actions())
-#     reconchess.notify_opponent_move_results(game, gnash)
-#     reconchess.play_sense(game, gnash, game.sense_actions(), game.move_actions())
-#     reconchess.play_move(game, gnash, game.move_actions())
-#     reconchess.notify_opponent_move_results(game, opponent)
-#     reconchess.play_sense(game, opponent, game.sense_actions(), game.move_actions())
-#     reconchess.play_move(game, opponent, game.move_actions())
-#     reconchess.notify_opponent_move_results(game, gnash)
-# except Exception as e:
-#     traceback.print_exc(file=sys.stdout)
+    # opponent.handle_game_start(chess.WHITE, game.board.copy(), 'Trout')
+    # gnash.handle_game_start(chess.BLACK, game.board.copy(), 'Gnash')
+    # game.start()
 
-# game.end()
-# winner_color = game.get_winner_color()
-# win_reason = game.get_win_reason()
-# game_history = game.get_game_history()
+    # try:
+    #     reconchess.play_move(game, opponent, game.move_actions())
+    #     reconchess.notify_opponent_move_results(game, gnash)
+    #     reconchess.play_sense(game, gnash, game.sense_actions(), game.move_actions())
+    #     reconchess.play_move(game, gnash, game.move_actions())
+    #     reconchess.notify_opponent_move_results(game, opponent)
+    #     reconchess.play_sense(game, opponent, game.sense_actions(), game.move_actions())
+    #     reconchess.play_move(game, opponent, game.move_actions())
+    #     reconchess.notify_opponent_move_results(game, gnash)
+    # except Exception as e:
+    #     traceback.print_exc(file=sys.stdout)
 
-# opponent.handle_game_end(winner_color, win_reason, game_history)
-# gnash.handle_game_end(winner_color, win_reason, game_history)
+    # game.end()
+    # winner_color = game.get_winner_color()
+    # win_reason = game.get_win_reason()
+    # game_history = game.get_game_history()
 
-# reconchess.play_sense(game, gnash)
+    # opponent.handle_game_end(winner_color, win_reason, game_history)
+    # gnash.handle_game_end(winner_color, win_reason, game_history)
 
-winner_color, win_reason, history = play_local_game(white, black, game=game)
-history.save('games/game.json')
+    # reconchess.play_sense(game, gnash)
+
+    winner_color, win_reason, history = play_local_game(white, black, game=game)
+    history.save('games/game.json')
+
+if __name__ == '__main__':
+    freeze_support()
+    main()

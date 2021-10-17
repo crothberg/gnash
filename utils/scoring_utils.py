@@ -16,7 +16,7 @@ def score(board : chess.Board, time : float, color : chess.Color):
     board.clear_stack()
     if board.is_check():
         board.ep_square = None
-    analysis = engines.analyse(board, chess.engine.Limit(time=time))
+    analysis = engines.analyse(board, time)
     score = analysis['score']
     score = score.pov(color).score(mate_score=MATE_SCORE)
 

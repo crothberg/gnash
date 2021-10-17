@@ -10,6 +10,7 @@ from utils.exceptions import EmptyBoardDist
 from utils.util import *
 from utils.history_utils import *
 import utils.engine_utils as engines
+from utils.engine_utils import quit_on_exceptions
 import time
 import datetime
 import requests
@@ -40,6 +41,7 @@ class GnashBot(Player):
         self.useLocal = True
         self.useService = False
 
+    @quit_on_exceptions
     def handle_game_start(self, color: Color, board: chess.Board, opponent_name: str):
         self.color, self.board, self.opponent_name = color, board, opponent_name
         print(f"PLAYING {opponent_name} AS {'WHITE' if color else 'BLACK'}! Let's go!")
@@ -123,11 +125,13 @@ class GnashBot(Player):
             mostLikelyBoard = max(self.beliefState.myBoardDist, key=self.beliefState.myBoardDist.get)
             self.helperBot.handle_game_start(self.color, chess.Board(mostLikelyBoard), self.opponent_name)
 
+    @quit_on_exceptions
     def updateSpeed(self):
         timeLeft = self.gameEndTime - time.time()
         if timeLeft <= self.useHelperBotTime and self.gear < 4:
             self.set_gear(4)
 
+    @quit_on_exceptions
     def stash_and_add_history(self, phase : Phase, turn : int, history : tuple):
         if self.useHelperBot: return
         boardsToKeep = list(sorted(self.beliefState.myBoardDist, key = self.beliefState.myBoardDist.get, reverse=True))[:self.maxInDist]
@@ -154,6 +158,7 @@ class GnashBot(Player):
             requests.post(f"{self.baseurl}/add-our-move-result/{self.gameId}/{turn}/{phase.value}", json=json)
         print("Sending new history completed.")
 
+    @quit_on_exceptions
     def get_new_boards(self):
         extraTime = (self.gameEndTime - time.time()) - self.useHelperBotTime
         if not self.useService:
@@ -176,6 +181,7 @@ class GnashBot(Player):
             print(f"Received {len(boards)} boards in response")
             self.beliefState._check_invariants()
 
+    @quit_on_exceptions
     def handle_opponent_move_result(self, captured_my_piece: bool, capture_square: Optional[Square]):
         self.updateSpeed() 
         
@@ -201,6 +207,7 @@ class GnashBot(Player):
         self.beliefState._check_invariants()
         print(f"Handled opponent move result in {time.time() - t0} seconds.")
 
+    @quit_on_exceptions
     def choose_sense(self, sense_actions: List[Square], move_actions: List[chess.Move], seconds_left: float) -> \
             Optional[Square]:
         self.gameEndTime = time.time() + seconds_left
@@ -214,6 +221,7 @@ class GnashBot(Player):
         print(f"Chose a sensing action in {time.time()-t0} seconds.")
         return sense_move
 
+    @quit_on_exceptions
     def handle_sense_result(self, sense_result: List[Tuple[Square, Optional[chess.Piece]]]):
         self.updateSpeed()
 
@@ -242,6 +250,7 @@ class GnashBot(Player):
         print(bestKey, self.beliefState.myBoardDist[bestKey])
         print(f"Handled sense result in {time.time()-t0} seconds.")
 
+    @quit_on_exceptions
     def choose_move(self, move_actions: List[chess.Move], seconds_left: float) -> Optional[chess.Move]:
         self.gameEndTime = time.time() + seconds_left
         self.updateSpeed()
@@ -256,6 +265,7 @@ class GnashBot(Player):
         print(f"Chose a move in {time.time()-t0} seconds.")
         return move
 
+    @quit_on_exceptions
     def handle_move_result(self, requested_move: Optional[chess.Move], taken_move: Optional[chess.Move],
                            captured_opponent_piece: bool, capture_square: Optional[Square]):
         phase, turn = Phase.OUR_MOVE_RESULT, self.turn
@@ -289,6 +299,7 @@ class GnashBot(Player):
         self.turn += 1
         print("Waiting for opponent...")
 
+    @quit_on_exceptions
     def handle_game_end(self, winner_color: Optional[Color], win_reason: Optional[WinReason],
                         game_history: GameHistory):
         if (game_history != None): game_history.save('games/game.json')

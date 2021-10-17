@@ -2,8 +2,8 @@ from game.MoveSelector import MoveSelector
 from collections import defaultdict
 from strategy.select_sense import select_sense
 from utils.util import *
+from utils.parallelism_utils import *
 from reconchess.utilities import revise_move
-import gevent
 import chess
 
 class BeliefState:
@@ -31,7 +31,7 @@ class BeliefState:
         self._check_invariants()
         #Calculate impossible boards
         impossibleBoards = set()
-        gevent.joinall([gevent.spawn(BeliefState.sense_update_helper, fen, senseResult, impossibleBoards) for fen in self.myBoardDist])
+        run_parallel(BeliefState.sense_update_helper, [[fen, senseResult, impossibleBoards] for fen in self.myBoardDist])
         #Remove impossible board views
         for board in impossibleBoards:
             del self.myBoardDist[board]
@@ -55,10 +55,12 @@ class BeliefState:
 
     def opp_sense_result_update(self):
         self._check_invariants()
-        gevent.joinall([gevent.spawn(BeliefState.opp_sense_result_update_helper, self, fen, boardDist) for fen, boardDist in self.oppBoardDists.items()])
+        run_parallel(BeliefState.opp_sense_result_update_helper, list((self, fen, boardDist) for fen, boardDist in self.oppBoardDists.items()))
+        # gevent.joinall([gevent.spawn(BeliefState.opp_sense_result_update_helper, self, fen, boardDist) for fen, boardDist in self.oppBoardDists.items()])
         self._check_invariants()
 
     def opp_move_result_update_helper(self, fen, timeShare, boardProb, newMyBoardDist, oppBoardDist, newOppBoardDists, capturedMyPiece, captureSquare):
+        # print(f"Opening thread {threading.get_ident()} for board {fen}", flush=True)
         moveProbs = self.oppMoveSelector.get_move_dist(oppBoardDist, maxTime=timeShare)
         for move, moveProb in moveProbs.items():
             board = chess.Board(fen)
@@ -127,10 +129,14 @@ class BeliefState:
         
         newMyBoardDist = defaultdict(float)
         newOppBoardDists = dict()
-        for fen, boardProb in self.myBoardDist.items():
-            ##TODO: Make boards where they could have taken our king (and knew it) much more unlikely
-            # self.opp_move_result_update_helper(fen, min(1.5, (maxTime*.5)/len(self.myBoardDist) + (maxTime*.5)*boardProb), boardProb, newMyBoardDist, self.oppBoardDists[fen], newOppBoardDists, capturedMyPiece, captureSquare)
-            self.opp_move_result_update_helper(fen, min(1.5, maxTime*boardProb), boardProb, newMyBoardDist, self.oppBoardDists[fen], newOppBoardDists, capturedMyPiece, captureSquare)
+        mbd = self.myBoardDist
+        for chunk in chunks(list(sorted(self.myBoardDist.keys(), key=self.myBoardDist.get, reverse=True))):
+            run_parallel(self.opp_move_result_update_helper, list((fen, min(1.5, maxTime*mbd[fen]), mbd[fen], newMyBoardDist, self.oppBoardDists[fen], newOppBoardDists, capturedMyPiece, captureSquare) for fen in chunk))
+            # gevent.joinall([gevent.spawn(self.opp_move_result_update_helper, fen, min(1.5, maxTime*mbd[fen]), mbd[fen], newMyBoardDist, self.oppBoardDists[fen], newOppBoardDists, capturedMyPiece, captureSquare) for fen in chunk])
+        # for fen, boardProb in self.myBoardDist.items():
+        #     ##TODO: Make boards where they could have taken our king (and knew it) much more unlikely
+        #     # self.opp_move_result_update_helper(fen, min(1.5, (maxTime*.5)/len(self.myBoardDist) + (maxTime*.5)*boardProb), boardProb, newMyBoardDist, self.oppBoardDists[fen], newOppBoardDists, capturedMyPiece, captureSquare)
+        #     self.opp_move_result_update_helper(fen, min(1.5, maxTime*boardProb), boardProb, newMyBoardDist, self.oppBoardDists[fen], newOppBoardDists, capturedMyPiece, captureSquare)
         self.oppBoardDists = newOppBoardDists
         newMyBoardDistKeys = set(newMyBoardDist.keys())
         assert len(newMyBoardDistKeys)>0, f"Updates based on myBoardDist({self.myBoardDist.keys()} should have created at least one new possible board."
