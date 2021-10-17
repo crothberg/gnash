@@ -185,8 +185,8 @@ class Stash:
                     helperBot = HelperBot()
                     helperBot.handle_game_start(self.color, chess.Board(fen), "")
                     while (rescuePhase, rescueTurn) != (targetPhase, targetTurn):
-                        rescuePhase, rescueTurn = get_next_phase_and_turn(rescuePhase, rescueTurn)
                         self.history.apply_helper_bot_history(helperBot, rescuePhase, rescueTurn)
+                        rescuePhase, rescueTurn = get_next_phase_and_turn(rescuePhase, rescueTurn)
                     return helperBot.board.fen()
                 else:
                     self.improve_stash()
