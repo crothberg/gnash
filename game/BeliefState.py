@@ -75,7 +75,6 @@ class BeliefState:
             if self.catchingUp:
                 newOppBoardDist = {newFen: 1.0}
             else:
-            # if True:
                 board = chess.Board(fen)
                 for fen2, totalProb2 in oppBoardDist.items():
                     board2 = chess.Board(fen2)
@@ -92,6 +91,7 @@ class BeliefState:
                     board2.halfmove_clock = 0
                     newFen2 = board2.fen()
                     newOppBoardDist[newFen2] += moveProbs[move]*totalProb2
+            assert len(newOppBoardDist) > 0
             newOppBoardDists[newFen] = normalize(newOppBoardDist, adjust=True)
     def opp_move_result_update(self, capturedMyPiece, captureSquare, maxTime):
         self._check_invariants()
@@ -105,7 +105,6 @@ class BeliefState:
                 for move in get_all_moves(board):
                     if capture_square_of_move(board, move) == captureSquare:
                         possible = True
-                        break
                 if not possible:
                     impossibleBoards.add(board.fen())
             # if capturedMyPiece:
@@ -118,8 +117,7 @@ class BeliefState:
         try:
             BeliefState._remove_impossible_boards(self.myBoardDist, impossibleBoards)
         except EmptyBoardDist:
-            for board in impossibleBoards:
-                del self.oppBoardDists[board]
+            self.oppBoardDists = {}
             raise EmptyBoardDist
 
         for board in impossibleBoards:
@@ -131,9 +129,18 @@ class BeliefState:
         newOppBoardDists = dict()
         for fen, boardProb in self.myBoardDist.items():
             ##TODO: Make boards where they could have taken our king (and knew it) much more unlikely
-            self.opp_move_result_update_helper(fen, min(1.5, (maxTime*.5)/len(self.myBoardDist) + (maxTime*.5)*boardProb), boardProb, newMyBoardDist, self.oppBoardDists[fen], newOppBoardDists, capturedMyPiece, captureSquare)
+            # self.opp_move_result_update_helper(fen, min(1.5, (maxTime*.5)/len(self.myBoardDist) + (maxTime*.5)*boardProb), boardProb, newMyBoardDist, self.oppBoardDists[fen], newOppBoardDists, capturedMyPiece, captureSquare)
+            self.opp_move_result_update_helper(fen, min(1.5, maxTime*boardProb), boardProb, newMyBoardDist, self.oppBoardDists[fen], newOppBoardDists, capturedMyPiece, captureSquare)
         self.oppBoardDists = newOppBoardDists
-        self.myBoardDist = normalize_our_board_dist(newMyBoardDist, self.color) if maxTime > .5 else normalize(newMyBoardDist, adjust=True)
+        newMyBoardDistKeys = set(newMyBoardDist.keys())
+        assert len(newMyBoardDistKeys)>0, f"Updates based on myBoardDist({self.myBoardDist.keys()} should have created at least one new possible board."
+        try:
+            self.myBoardDist = normalize_our_board_dist(newMyBoardDist, self.color) if maxTime > .5 else normalize(newMyBoardDist, adjust=True)
+        except:
+            assert False, (
+                f"Normalizing \n{newMyBoardDistKeys}\n should not have resulted in an error"
+                + f"self.myBoardDist: {self.myBoardDist}"
+            )
         self._condense_opp_board_dists()
         self._check_invariants()
 
@@ -174,8 +181,7 @@ class BeliefState:
         try:
             BeliefState._remove_impossible_boards(self.myBoardDist, impossibleBoards)
         except EmptyBoardDist:
-            for board in impossibleBoards:
-                del self.oppBoardDists[board]
+            self.oppBoardDists = {}
             raise EmptyBoardDist
         for board in impossibleBoards:
             del self.oppBoardDists[board]
@@ -289,9 +295,12 @@ class BeliefState:
         # return
         startTime = time.time()
         if not (len(set(self.oppBoardDists.keys()).intersection(self.myBoardDist.keys())) == len(self.myBoardDist) == len(self.oppBoardDists)):
-            print(set(self.oppBoardDists.keys()).difference(self.myBoardDist.keys()))
-            print(set(self.myBoardDist.keys()).difference(self.oppBoardDists.keys()))
-            assert False, "Keys should always match between myBoardDist and oppBoardDists"
+            assert False, (
+                "Keys should always match between myBoardDist and oppBoardDists"
+                + f"\nself.catchingUp: {self.catchingUp}"
+                + f"\nonly in oppBoardDist: {set(self.oppBoardDists.keys()).difference(self.myBoardDist.keys())}"
+                + f"\nonly in myBoardDist: {set(self.myBoardDist.keys()).difference(self.oppBoardDists.keys())}"
+            )
         for fen, boardDist in self.oppBoardDists.items():
             if len(boardDist) == 0:
                 continue

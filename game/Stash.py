@@ -8,7 +8,7 @@ import threading
 class Stash:
     def __init__(self, color):
         self.levels = dict()
-        self.lock = threading.BoundedSemaphore()
+        self.lock = threading.Lock()
         # self.secondaryLock = threading.BoundedSemaphore()
         self.color = color
         self.history = History()
@@ -36,9 +36,9 @@ class Stash:
         while not self.kill and (time.time()-self.lastHistoryAddedTime < 1000):
             acquired = self.lock.acquire()
             assert acquired
-            self.improve_stash(maxAtATime=30, background=True)
+            self.improve_stash(maxAtATime=50, background=True)
             self.lock.release()
-            time.sleep(.25)
+            time.sleep(.15)
 
     def start_background_processor(self):
         thread = threading.Thread(target=self._background_improvements, name="processor")
@@ -127,9 +127,11 @@ class Stash:
 
         # Find the level of the stash we want to take boards from
         phase, turn = self.latest_phase_with_boards(excludeLast=True)
-        if phase == None:
-            if not background: print("Stash has no more boards requiring expansion!")
+        if background and phase == None:
             return
+        elif background and phase == None:
+            assert len(self) == 0
+            assert False, "Asked for more boards but stash was empty!"
 
         # Take the boards from the stash and put them into our new BeliefState
         boardsToAdvance = set(self.get_boards_at_phase(phase, turn)[:maxAtATime])
@@ -152,6 +154,7 @@ class Stash:
         # Remove from the last phase the boards we just moved up a phase
         self.levels[turn][phase] = list(set(self.levels[turn][phase]).difference(set(boardsToAdvance)))
 
+        return
         if (nextPhase, nextTurn) == self.history.get_future_phase_and_turn() and len(beliefState.myBoardDist) > 0:
             print(f"Found {len(beliefState.myBoardDist)} new possible boards!")
             print(self)
@@ -177,10 +180,10 @@ class Stash:
                 # print(self)
                 if time.time() > endTime:
                     self.end_background_processor()
-                    rescueTurn, rescuePhase, board = self.rescue
+                    rescueTurn, rescuePhase, fen = self.rescue
                     targetPhase, targetTurn = self.history.get_future_phase_and_turn()
                     helperBot = HelperBot()
-                    helperBot.handle_game_start(self.color, board, "")
+                    helperBot.handle_game_start(self.color, chess.Board(fen), "")
                     while (rescuePhase, rescueTurn) != (targetPhase, targetTurn):
                         rescuePhase, rescueTurn = get_next_phase_and_turn(rescuePhase, rescueTurn)
                         self.history.apply_helper_bot_history(helperBot, rescuePhase, rescueTurn)

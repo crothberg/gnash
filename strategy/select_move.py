@@ -68,45 +68,56 @@ def get_move_dist_helper_2(testMoves, sampleFen, sampleFenProb, legalMoveScores,
         # input()
         return
     if len(legalTestMoves) > 0:
-        try:
-            if False:
-            # if len(kingCaptures) == 0:
-                b = chess.Board(sampleFen)
-                b.clear_stack()
-                analysis = analysisEngine.analyse(b, chess.engine.Limit(time=.015 * len(legalTestMoves)), multipv = len(legalTestMoves), root_moves = legalTestMoves)
-                baseScores.update({x['pv'][0] : x['score'].pov(b.turn).score(mate_score=5000) for x in analysis})
-                # print(baseScores)
+        # try:
+        #     if False:
+        #     # if len(kingCaptures) == 0:
+        #         b = chess.Board(sampleFen)
+        #         b.clear_stack()
+        #         analysis = analysisEngine.analyse(b, chess.engine.Limit(time=.015 * len(legalTestMoves)), multipv = len(legalTestMoves), root_moves = legalTestMoves)
+        #         baseScores.update({x['pv'][0] : x['score'].pov(b.turn).score(mate_score=5000) for x in analysis})
+        #         # print(baseScores)
+        for move in legalTestMoves:
+            boardCopy = chess.Board(sampleFen)
+            isCapture = capture_square_of_move(boardCopy, move) != None
+            boardCopy.push(move)
+            try:
+                primaryScore = scorer.score(boardCopy, .01, analysisEngine, not boardCopy.turn)
+            except:
+                print(f"failed in primary analysis with board {sampleFen}, and move {move}, returning...")
+                return
+            gambleAmount = gambleFactor * .5
+            if not actuallyUs and not isCapture:
+                boardCopy.turn = not boardCopy.turn
+                boardCopy.ep_square = None
+                try:
+                    secondaryScore = scorer.score(boardCopy, .01, analysisEngine, boardCopy.turn)
+                except:
+                    print(f"failed in secondary analysis with board {boardCopy.fen()}, after move {move}, returning...")
+                    return
+                # print(f"Primary score for move {move} on board {sampleFen}: {primaryScore}")
+                # print(f"Secondary score for move {move} on board {sampleFen}: {secondaryScore}")
+                baseScores[move] = (1-gambleAmount)*primaryScore + (gambleAmount)*secondaryScore
+            elif actuallyUs and not isCapture:
+                boardCopy.turn = not boardCopy.turn
+                boardCopy.ep_square = None
+                try:
+                    secondaryScore = scorer.score(boardCopy, .01, analysisEngine, boardCopy.turn)
+                except:
+                    print(f"failed in secondary analysis with board {boardCopy.fen()}, after move {move}, returning...")
+                    return
+                # print(f"Primary score for move {move} on board {sampleFen}: {primaryScore}")
+                # print(f"Secondary score for move {move} on board {sampleFen}: {secondaryScore}")
+                baseScores[move] = .95*primaryScore + .05*secondaryScore
             else:
-                for move in legalTestMoves:
-                    boardCopy = chess.Board(sampleFen)
-                    isCapture = capture_square_of_move(boardCopy, move) != None
-                    boardCopy.push(move)
-                    boardCopy.clear_stack()
-                    primaryScore = scorer.score(boardCopy, .01, analysisEngine, not boardCopy.turn)
-                    gambleAmount = gambleFactor * .5
-                    if not actuallyUs and not isCapture:
-                        boardCopy.turn = not boardCopy.turn
-                        secondaryScore = scorer.score(boardCopy, .01, analysisEngine, boardCopy.turn)
-                        # print(f"Primary score for move {move} on board {sampleFen}: {primaryScore}")
-                        # print(f"Secondary score for move {move} on board {sampleFen}: {secondaryScore}")
-                        baseScores[move] = (1-gambleAmount)*primaryScore + (gambleAmount)*secondaryScore
-                    elif actuallyUs and not isCapture:
-                        boardCopy.turn = not boardCopy.turn
-                        secondaryScore = scorer.score(boardCopy, .01, analysisEngine, boardCopy.turn)
-                        # print(f"Primary score for move {move} on board {sampleFen}: {primaryScore}")
-                        # print(f"Secondary score for move {move} on board {sampleFen}: {secondaryScore}")
-                        baseScores[move] = .95*primaryScore + .05*secondaryScore
-                    else:
-                        baseScores[move] = primaryScore
-                    
-        except Exception as e:
-            print(e)
-            print(f"failed in analyses with board {sampleFen}, returning...")
-            print(intoCheckMoves)
-            print(kingCaptures)
-            print(legalTestMoves)
-            # input()
-            return
+                baseScores[move] = primaryScore                    
+        # except Exception as e:
+        #     print(e)
+        #     print(f"failed in analyses with board {sampleFen}, returning...")
+        #     print(intoCheckMoves)
+        #     print(kingCaptures)
+        #     print(legalTestMoves)
+        #     # input()
+        #     return
         if not len(legalTestMoves) <= len(baseScores) <= len(legalTestMoves) + 1 + len(psuedoLegalOnly):
             print(sampleFen)
             print(testMoves)

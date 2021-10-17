@@ -13,8 +13,8 @@ SECONDS_PER_PLAYER = 900
 game = LocalGame(SECONDS_PER_PLAYER)
 
 # white = GnashBot(isTest=True)
-white = RandomBot()
-# white = AttackerBot()
+# white = RandomBot()
+white = AttackerBot()
 # white = TroutBot()
 black = GnashBot(isTest=True)
 

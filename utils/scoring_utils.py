@@ -12,6 +12,9 @@ def score(board : chess.Board, time : float, engine : chess.engine, color : ches
         if board.turn == color: return 1
         else: return 0
 
+    board.clear_stack()
+    if board.is_check():
+        board.ep_square = None
     analysis = engine.analyse(board, chess.engine.Limit(time=time))
     score = analysis['score']
     score = score.pov(color).score(mate_score=MATE_SCORE)

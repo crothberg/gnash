@@ -13,13 +13,17 @@ def handle_game_start(color, gameId):
     stashes[gameId] = stash
     stash.start_background_processor()
 
+@app.route("/")
+def home():
+    return "hello world!"
+
 @app.route("/start/<gameId>", methods=['POST'])
 def start(gameId):
     content = request.json
     handle_game_start(content["color"], gameId)
     return jsonify({"Error":None})
 
-@app.route("/add_our_move_result/<gameId>/<turn>/<phase>", methods=['POST'])
+@app.route("/add-our-move-result/<gameId>/<turn>/<phase>", methods=['POST'])
 def add_our_move_result(gameId, turn, phase):
     try:
         turn, phase = int(turn), Phase(int(phase))
@@ -30,7 +34,7 @@ def add_our_move_result(gameId, turn, phase):
     except:
         return
 
-@app.route("/add_opp_move_result/<gameId>/<turn>/<phase>", methods=['POST'])
+@app.route("/add-opp-move-result/<gameId>/<turn>/<phase>", methods=['POST'])
 def add_opp_move_result(gameId, turn, phase):
     try:
         turn, phase = int(turn), Phase(int(phase))
@@ -41,7 +45,7 @@ def add_opp_move_result(gameId, turn, phase):
     except:
         return
 
-@app.route("/add_sense_result/<gameId>/<turn>/<phase>", methods=['POST'])
+@app.route("/add-sense-result/<gameId>/<turn>/<phase>", methods=['POST'])
 def add_sense_result(gameId, turn, phase):
     try:
         turn, phase = int(turn), Phase(int(phase))
@@ -54,7 +58,7 @@ def add_sense_result(gameId, turn, phase):
     except:
         return
 
-@app.route("/get_possible_boards/<gameId>", methods=['POST'])
+@app.route("/get-possible-boards/<gameId>", methods=['POST'])
 def get_possible_boards(gameId):
     try:
         stash = stashes[gameId]
@@ -65,13 +69,13 @@ def get_possible_boards(gameId):
         timeRemaining = float(request.json["extraTime"])
         rescueBoard = stash.add_possible_boards(beliefState, numBoards, urgent=True, timeRemaining=timeRemaining)
         if rescueBoard == None:
-            return jsonify({"useHelperBot": False, "fens":list(beliefState.myBoardDist.keys())})
+            return jsonify({"useHelperBot":False, "fens":list(beliefState.myBoardDist.keys())})
         else:
             return jsonify({"useHelperBot":True, "helperBotFen": rescueBoard})
     except:
         return jsonify({"fens":[]})
 
-@app.route("/stash_boards/<gameId>/<turn>/<phase>", methods = ['POST'])
+@app.route("/stash-boards/<gameId>/<turn>/<phase>", methods = ['POST'])
 def stash_boards(gameId, turn, phase):
     try:
         turn, phase = int(turn), Phase(int(phase))
@@ -86,7 +90,7 @@ def stash_boards(gameId, turn, phase):
     except:
         return
 
-@app.route("/game_over/<gameId>", methods = ['POST'])
+@app.route("/game-over/<gameId>", methods = ['POST'])
 def end_game(gameId):
     return jsonify({"Error":None})
         
