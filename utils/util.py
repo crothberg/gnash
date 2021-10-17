@@ -1,36 +1,12 @@
 from collections import defaultdict
 import chess
-import chess.engine
 import random
 from reconchess.utilities import *
 from utils.scoring_utils import *
-import os
 import gevent
 import time
 
 from utils.exceptions import EmptyBoardDist
-
-os.environ['STOCKFISH_EXECUTABLE'] = os.path.dirname(os.path.realpath(__file__)) + '/../stockfish/stockfish_14_x64_avx2.exe'
-STOCKFISH_ENV_VAR = 'STOCKFISH_EXECUTABLE'
-
-# make sure stockfish environment variable exists
-if STOCKFISH_ENV_VAR not in os.environ:
-    raise KeyError(
-        'Gnash requires an environment variable called "{}" pointing to the Stockfish executable'.format(
-            STOCKFISH_ENV_VAR))
-
-# make sure there is actually a file
-stockfish_path = os.environ[STOCKFISH_ENV_VAR]
-if not os.path.exists(stockfish_path):
-    raise ValueError('No stockfish executable found at "{}"'.format(stockfish_path))
-
-# initialize the stockfish engine
-NUM_ENGINES=5
-moving_engines = [chess.engine.SimpleEngine.popen_uci(stockfish_path, setpgrp=True) for _ in range(NUM_ENGINES)]
-analysisEngine = chess.engine.SimpleEngine.popen_uci(stockfish_path, setpgrp=True)
-extra_engines = [chess.engine.SimpleEngine.popen_uci(stockfish_path, setpgrp=True) for _ in range(NUM_ENGINES)]
-okayJustOneMore = chess.engine.SimpleEngine.popen_uci(stockfish_path, setpgrp=True)
-print('Stockfish engines initialized..')
 
 def chunks(lst, n):
     for i in range(0, len(lst), n):
@@ -77,9 +53,9 @@ def normalize(dist, adjust = False, giveToZeros=.10, raiseNum = 0):
                 dist[e] /= total
     return dist
 
-def normalize_board_dist_helper(fen, dist, engine):
+def normalize_board_dist_helper(fen, dist):
     board = chess.Board(fen)
-    dist[fen] = score(board, .15, engine, not board.turn)
+    dist[fen] = score(board, .15, not board.turn)
 ##SHOULD ONLY BE CALLED BY US
 def normalize_our_board_dist(dist, ourColor):
     if len(dist) == 0:
@@ -102,8 +78,8 @@ def normalize_our_board_dist(dist, ourColor):
         print(f"adjusting dist of size {len(dist)}...")
         t0 = time.time()
         # input("Here. Hit any key to continue")
-        for chunk in chunks(list(dist.keys()), NUM_ENGINES):
-            gevent.joinall([gevent.spawn(normalize_board_dist_helper, fen, dist, engine) for fen, engine in zip(chunk, extra_engines)])
+        for chunk in chunks(list(dist.keys())):
+            gevent.joinall([gevent.spawn(normalize_board_dist_helper, fen, dist) for fen in chunk])
         # print(dist)
         dist = normalize(dist, adjust=True, giveToZeros=.3, raiseNum=6)
         print(f"Completed after {time.time()-t0} seconds")

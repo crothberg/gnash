@@ -9,6 +9,7 @@ import chess.engine
 from utils.exceptions import EmptyBoardDist
 from utils.util import *
 from utils.history_utils import *
+import utils.engine_utils as engines
 import time
 import datetime
 import requests
@@ -294,12 +295,7 @@ class GnashBot(Player):
         if self.useService:
             requests.post(f"{self.baseurl}/game-over/{self.gameId}")
         print(f"{'We' if winner_color == self.color else f'They ({self.opponent_name})'} beat {'us' if winner_color != self.color else self.opponent_name} by {win_reason}!")
-        for engine_list in [moving_engines, [analysisEngine], extra_engines, [okayJustOneMore]]:
-            for engine in engine_list:
-                try:
-                    engine.quit()
-                except:
-                    pass
+        engines.shut_down()
         if self.useHelperBot:
             try:
                 self.helperBot.engine.quit()

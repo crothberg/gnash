@@ -1,5 +1,6 @@
 import chess
 from utils.util import *
+import utils.engine_utils as engines
 import strategy.select_move as strategy
 
 class MoveSelector:
@@ -21,7 +22,7 @@ class MoveSelector:
                 if enemy_king_attackers:
                     attacker_square = enemy_king_attackers.pop()
                     return chess.Move(attacker_square, enemy_king_square)
-            move = okayJustOneMore.play(board, chess.engine.Limit(time=min(self.timePerMove, 1.0))).move
+            move = engines.play(board, chess.engine.Limit(time=min(self.timePerMove, 1.0))).move
             if move != None and move.promotion != None and move.promotion != chess.KNIGHT:
                 move.promotion = chess.QUEEN
             return move

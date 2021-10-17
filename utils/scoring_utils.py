@@ -1,10 +1,11 @@
 import chess
 import chess.engine
+import utils.engine_utils as engines
 
 MATE_SCORE=5000
 
 #return a score in [0,1]
-def score(board : chess.Board, time : float, engine : chess.engine, color : chess.Color):
+def score(board : chess.Board, time : float, color : chess.Color):
     if board.king(color) == None: return 0
     if board.king(not color) == None: return 1
     
@@ -15,7 +16,7 @@ def score(board : chess.Board, time : float, engine : chess.engine, color : ches
     board.clear_stack()
     if board.is_check():
         board.ep_square = None
-    analysis = engine.analyse(board, chess.engine.Limit(time=time))
+    analysis = engines.analyse(board, chess.engine.Limit(time=time))
     score = analysis['score']
     score = score.pov(color).score(mate_score=MATE_SCORE)
 

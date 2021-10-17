@@ -3,6 +3,7 @@ import chess.engine
 from utils.types import *
 from utils.util import *
 import utils.scoring_utils as scorer
+import utils.engine_utils as engines
 from reconchess.utilities import revise_move
 import math
 import time
@@ -42,7 +43,7 @@ def get_move_dist_helper_2(testMoves, sampleFen, sampleFenProb, legalMoveScores,
             sampleBoardCopy = chess.Board(sampleFen)
             sampleBoardCopy.turn = not sampleBoardCopy.turn
             sampleBoardCopy.clear_stack()
-            nullScore = scorer.score(sampleBoardCopy, .05, analysisEngine, not sampleBoardCopy.turn)
+            nullScore = scorer.score(sampleBoardCopy, .05, not sampleBoardCopy.turn)
             # if actuallyUs: print(f"Null score for board {sampleFen}: {nullScore}")
             baseScores[chess.Move.null()] = nullScore
     except Exception as e:
@@ -58,7 +59,7 @@ def get_move_dist_helper_2(testMoves, sampleFen, sampleFenProb, legalMoveScores,
             boardCopy = chess.Board(sampleFen)
             boardCopy.push(move)
             boardCopy.clear_stack()
-            moveScore = scorer.score(boardCopy, .01, analysisEngine, not boardCopy.turn)
+            moveScore = scorer.score(boardCopy, .01, not boardCopy.turn)
             baseScores[move] = moveScore
     except Exception as e:
         print(str(e))
@@ -68,20 +69,13 @@ def get_move_dist_helper_2(testMoves, sampleFen, sampleFenProb, legalMoveScores,
         # input()
         return
     if len(legalTestMoves) > 0:
-        # try:
-        #     if False:
-        #     # if len(kingCaptures) == 0:
-        #         b = chess.Board(sampleFen)
-        #         b.clear_stack()
-        #         analysis = analysisEngine.analyse(b, chess.engine.Limit(time=.015 * len(legalTestMoves)), multipv = len(legalTestMoves), root_moves = legalTestMoves)
-        #         baseScores.update({x['pv'][0] : x['score'].pov(b.turn).score(mate_score=5000) for x in analysis})
-        #         # print(baseScores)
         for move in legalTestMoves:
             boardCopy = chess.Board(sampleFen)
             isCapture = capture_square_of_move(boardCopy, move) != None
             boardCopy.push(move)
+            boardCopy.clear_stack()
             try:
-                primaryScore = scorer.score(boardCopy, .01, analysisEngine, not boardCopy.turn)
+                primaryScore = scorer.score(boardCopy, .01, not boardCopy.turn)
             except:
                 print(f"failed in primary analysis with board {sampleFen}, and move {move}, returning...")
                 return
@@ -90,10 +84,9 @@ def get_move_dist_helper_2(testMoves, sampleFen, sampleFenProb, legalMoveScores,
                 boardCopy.turn = not boardCopy.turn
                 boardCopy.ep_square = None
                 try:
-                    secondaryScore = scorer.score(boardCopy, .01, analysisEngine, boardCopy.turn)
+                    secondaryScore = scorer.score(boardCopy, .01, boardCopy.turn)
                 except:
                     print(f"failed in secondary analysis with board {boardCopy.fen()}, after move {move}, returning...")
-                    return
                 # print(f"Primary score for move {move} on board {sampleFen}: {primaryScore}")
                 # print(f"Secondary score for move {move} on board {sampleFen}: {secondaryScore}")
                 baseScores[move] = (1-gambleAmount)*primaryScore + (gambleAmount)*secondaryScore
@@ -101,7 +94,7 @@ def get_move_dist_helper_2(testMoves, sampleFen, sampleFenProb, legalMoveScores,
                 boardCopy.turn = not boardCopy.turn
                 boardCopy.ep_square = None
                 try:
-                    secondaryScore = scorer.score(boardCopy, .01, analysisEngine, boardCopy.turn)
+                    secondaryScore = scorer.score(boardCopy, .01, boardCopy.turn)
                 except:
                     print(f"failed in secondary analysis with board {boardCopy.fen()}, after move {move}, returning...")
                     return
@@ -110,14 +103,7 @@ def get_move_dist_helper_2(testMoves, sampleFen, sampleFenProb, legalMoveScores,
                 baseScores[move] = .95*primaryScore + .05*secondaryScore
             else:
                 baseScores[move] = primaryScore                    
-        # except Exception as e:
-        #     print(e)
-        #     print(f"failed in analyses with board {sampleFen}, returning...")
-        #     print(intoCheckMoves)
-        #     print(kingCaptures)
-        #     print(legalTestMoves)
-        #     # input()
-        #     return
+
         if not len(legalTestMoves) <= len(baseScores) <= len(legalTestMoves) + 1 + len(psuedoLegalOnly):
             print(sampleFen)
             print(testMoves)
@@ -290,8 +276,8 @@ def get_quick_move_dist(boardDist, maxTime, movesToConsider = None, actuallyUs =
         for move in threatenMateMoves:
             probs[move] += (1 if not actuallyUs else .3)
 
-    def update_probs(board, engine):
-        move = get_stockfish_move(board, timePerMove, engine, movesToConsider=legalMoves, actuallyUs=actuallyUs)
+    def update_probs(board):
+        move = get_stockfish_move(board, timePerMove, movesToConsider=legalMoves, actuallyUs=actuallyUs)
         if move is not None:
             if move not in probs:
                 print(board)
@@ -301,11 +287,9 @@ def get_quick_move_dist(boardDist, maxTime, movesToConsider = None, actuallyUs =
                     probs[move] = 2 #this is a king capture
                 return
             probs[move] += 1
-    movingEngineIndex = 0
     while time.time()-startTime < maxTime - timePerMove:
         sampleBoard = sample(boardDist)
-        update_probs(sampleBoard, moving_engines[movingEngineIndex])
-        movingEngineIndex = (movingEngineIndex + 1) % len(moving_engines)
+        update_probs(sampleBoard)
     return normalize(probs, adjust=True)
 
 def choose_n_moves(moveScores, n, c, totalTriesSoFar, fen):
@@ -321,7 +305,7 @@ def choose_1_board(fenCounts, dist):
     # print(f"sampled board {fen}")
     return fen
 
-def get_stockfish_move(fen : str, maxTime, engine, movesToConsider=None, actuallyUs=False) -> Move:
+def get_stockfish_move(fen : str, maxTime, movesToConsider=None, actuallyUs=False) -> Move:
     board = chess.Board(fen)
     # if actuallyUs:
     enemy_king_square = board.king(not board.turn)
@@ -336,7 +320,7 @@ def get_stockfish_move(fen : str, maxTime, engine, movesToConsider=None, actuall
     move = None
     if movesToConsider != None:
         try:
-            move = engine.play(board, chess.engine.Limit(time=maxTime), root_moves = movesToConsider).move
+            move = engines.play(board, chess.engine.Limit(time=maxTime), root_moves = movesToConsider).move
         except Exception as e:
             print(e)
             print(f"ERROR GETTING MOVE FOR BOARD {board.fen()}")
@@ -344,7 +328,7 @@ def get_stockfish_move(fen : str, maxTime, engine, movesToConsider=None, actuall
             print(f"MovesToConsider: {movesToConsider}")
     else:
         try:
-            move = engine.play(board, chess.engine.Limit(time=maxTime)).move
+            move = engines.play(board, chess.engine.Limit(time=maxTime)).move
         except Exception as e:
             print(e)
             print(f"ERROR GETTING MOVE FOR BOARD {board.fen()}")
