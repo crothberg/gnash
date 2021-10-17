@@ -104,7 +104,7 @@ class BeliefState:
             #if you captured my piece but couldn't have, impossible
             if capturedMyPiece:
                 possible = False
-                for move in get_all_moves(board):
+                for move in get_pseudo_legal_moves({board.fen()}):
                     if capture_square_of_move(board, move) == captureSquare:
                         possible = True
                 if not possible:
