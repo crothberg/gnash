@@ -1,15 +1,59 @@
+from redis import Redis
+import json
+import random
+
 #Uncomment for multiprocessing
-from multiprocessing import Pool, cpu_count
-POOL_SIZE = cpu_count()-1
+from multiprocessing import Pool as MpPool, cpu_count
+MP_POOL_SIZE = cpu_count()-1
 
-# #Uncomment for threading
-# from multiprocessing.dummy import Pool
-# POOL_SIZE = 100
+#Uncomment for threading
+from multiprocessing.dummy import Pool as ThreadPool
+THREAD_POOL_SIZE = 20
 
-def chunks(lst, chunkSize=POOL_SIZE):
+NO_MULTIPROCESSING = True
+NO_THREADING = True
+if NO_THREADING: assert NO_MULTIPROCESSING
+
+class RedisCache:
+    cache = Redis(host='localhost', port=6379, db=0)
+    nextKey = 500
+    def get_unique_redis_key():
+        return str(random.random())
+        # key = RedisCache.nextKey
+        # RedisCache.nextKey = key + 1
+        # return str(key)
+def set_temp_dict(d, key=None):
+    # print("Setting...")
+    key = key or RedisCache.get_unique_redis_key()
+    RedisCache.cache.set(key, json.dumps(d))
+    # print("Set!")
+    return key
+def get_temp_dict(key):
+    # print("Getting")
+    result = json.loads(RedisCache.cache.get(key))
+    # print("Got")
+    return result
+def lock(key):
+    locked = RedisCache.cache.lock(key + "_lock")
+    return locked
+def clean_up():
+    RedisCache.cache.flushdb()
+
+def chunks(lst, chunkSize):
     for i in range(0, len(lst), chunkSize):
         yield lst[i:i+chunkSize]
 
-def run_parallel(func, paramsForEachCall):
-    with Pool(POOL_SIZE) as pool:
-        pool.starmap(func, paramsForEachCall)
+def _run_func_in_threads(func, paramsForEachCall):
+    with ThreadPool(THREAD_POOL_SIZE) as threadpool:
+        threadpool.starmap(func, paramsForEachCall)
+
+def run_parallel(func, paramsForEachCall, threadingOnly = True):
+    if len(paramsForEachCall) > 100 and not threadingOnly and not NO_MULTIPROCESSING:
+        bigChunks = list(chunks(paramsForEachCall, chunkSize=len(paramsForEachCall)//MP_POOL_SIZE+1))
+        with MpPool(MP_POOL_SIZE) as mppool:
+            mppool.starmap(_run_func_in_threads, list((func, chunk) for chunk in bigChunks))
+    elif not NO_THREADING:
+        _run_func_in_threads(func, paramsForEachCall)
+    else:
+        for paramForCall in paramsForEachCall:
+            func(*paramForCall)

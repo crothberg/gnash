@@ -1,8 +1,10 @@
+import threading
 from game.MoveSelector import MoveSelector
 from collections import defaultdict
 from strategy.select_sense import select_sense
 from utils.util import *
-from utils.parallelism_utils import *
+import utils.parallelism_utils as parallel
+import multiprocessing as mp
 from reconchess.utilities import revise_move
 import chess
 
@@ -20,7 +22,7 @@ class BeliefState:
 
         self.moveSelector = moveSelector or MoveSelector(actuallyUs=True, gambleFactor=.1, timePerMove=5)
         self.oppMoveSelector = oppMoveSelector or MoveSelector(actuallyUs=False, gambleFactor=.3, timePerMove=None)
-        self.believedMoveSelector = MoveSelector(actuallyUs=True, gambleFactor=.15, timePerMove=None)
+        self.believedMoveSelector = MoveSelector(actuallyUs=False, gambleFactor=.15, timePerMove=None)
 
     def sense_update_helper(fen, senseResult, impossibleBoards):
         board = chess.Board(fen)
@@ -31,7 +33,9 @@ class BeliefState:
         self._check_invariants()
         #Calculate impossible boards
         impossibleBoards = set()
-        run_parallel(BeliefState.sense_update_helper, [[fen, senseResult, impossibleBoards] for fen in self.myBoardDist])
+        for fen in self.myBoardDist:
+            BeliefState.sense_update_helper(fen, senseResult, impossibleBoards)
+        # parallel.run_parallel(BeliefState.sense_update_helper, [[fen, senseResult, impossibleBoards] for fen in self.myBoardDist])
         #Remove impossible board views
         for board in impossibleBoards:
             del self.myBoardDist[board]
@@ -55,46 +59,63 @@ class BeliefState:
 
     def opp_sense_result_update(self):
         self._check_invariants()
-        run_parallel(BeliefState.opp_sense_result_update_helper, list((self, fen, boardDist) for fen, boardDist in self.oppBoardDists.items()))
+        for fen, boardDist in self.oppBoardDists.items():
+            BeliefState.opp_sense_result_update_helper(self, fen, boardDist)
+        # parallel.run_parallel(BeliefState.opp_sense_result_update_helper, list((self, fen, boardDist) for fen, boardDist in self.oppBoardDists.items()))
         # gevent.joinall([gevent.spawn(BeliefState.opp_sense_result_update_helper, self, fen, boardDist) for fen, boardDist in self.oppBoardDists.items()])
         self._check_invariants()
 
-    def opp_move_result_update_helper(self, fen, timeShare, boardProb, newMyBoardDist, oppBoardDist, newOppBoardDists, capturedMyPiece, captureSquare):
-        # print(f"Opening thread {threading.get_ident()} for board {fen}", flush=True)
+    def opp_move_result_update_helper(self, fen, timeShare, boardProb, newMyBoardDistKey, oppBoardDist, newOppBoardDistsKey, capturedMyPiece, captureSquare):
+        # print(f"Opening thread {threading.get_ident()} for board {fen} with time {timeShare}", flush=True)
+        # print(f"Opening process {mp.current_process()} for board {fen} with time {timeShare}", flush=True)
+        t0 = time.time()
         moveProbs = self.oppMoveSelector.get_move_dist(oppBoardDist, maxTime=timeShare)
-        for move, moveProb in moveProbs.items():
-            board = chess.Board(fen)
-            revisedMove = revise_move(board, move) if move != chess.Move.null() else chess.Move.null()
-            revisedMove = revisedMove or chess.Move.null()
-            if ((capturedMyPiece and captureSquare != real_capture_square_of_move(board, revisedMove))
-                or (not capturedMyPiece and real_capture_square_of_move(board, revisedMove) != None)):
-                    continue
-            board.push(revisedMove)
-            board.halfmove_clock = 0
-            newFen = board.fen()
-            newMyBoardDist[newFen] += moveProb*boardProb
-            newOppBoardDist = defaultdict(float)
-            if self.catchingUp:
-                newOppBoardDist = {newFen: 1.0}
-            else:
+        # print(f"Thread {threading.get_ident()} for board {fen} with timeshare {timeShare} got move dist after {time.time() - t0} seconds", flush=True)
+        with parallel.lock(newMyBoardDistKey), parallel.lock(newOppBoardDistsKey):
+            newMyBoardDist = parallel.get_temp_dict(newMyBoardDistKey)
+            newOppBoardDists = parallel.get_temp_dict(newOppBoardDistsKey)
+            for move, moveProb in moveProbs.items():
                 board = chess.Board(fen)
-                for fen2, totalProb2 in oppBoardDist.items():
-                    board2 = chess.Board(fen2)
-                    revisedMoveOnRealBoard = revise_move(board, move) if move != chess.Move.null() else chess.Move.null()
-                    revisedMoveOnRealBoard = revisedMoveOnRealBoard or chess.Move.null()
-                    revisedMove = revise_move(board, move) if move != chess.Move.null() else chess.Move.null()
-                    revisedMove = revisedMove or chess.Move.null()
-                    if revisedMove != revisedMoveOnRealBoard:
+                revisedMove = revise_move(board, move) if move != chess.Move.null() else chess.Move.null()
+                revisedMove = revisedMove or chess.Move.null()
+                if ((capturedMyPiece and captureSquare != real_capture_square_of_move(board, revisedMove))
+                    or (not capturedMyPiece and real_capture_square_of_move(board, revisedMove) != None)):
                         continue
-                    if ((capturedMyPiece and captureSquare != real_capture_square_of_move(board2, revisedMove))
-                        or (not capturedMyPiece and real_capture_square_of_move(board2, revisedMove) != None)):
+                board.push(revisedMove)
+                board.halfmove_clock = 0
+                newFen = board.fen()
+                tx = time.time()
+                newMyBoardDist[newFen] = moveProb*boardProb + (newMyBoardDist[newFen] if newFen in newMyBoardDist else 0)
+                newOppBoardDist = dict()
+                if self.catchingUp:
+                    newOppBoardDist = {newFen: 1.0}
+                else:
+                    board = chess.Board(fen)
+                    for fen2, totalProb2 in oppBoardDist.items():
+                        board2 = chess.Board(fen2)
+                        revisedMoveOnRealBoard = revise_move(board, move) if move != chess.Move.null() else chess.Move.null()
+                        revisedMoveOnRealBoard = revisedMoveOnRealBoard or chess.Move.null()
+                        revisedMove = revise_move(board, move) if move != chess.Move.null() else chess.Move.null()
+                        revisedMove = revisedMove or chess.Move.null()
+                        if revisedMove != revisedMoveOnRealBoard:
                             continue
-                    board2.push(revisedMove)
-                    board2.halfmove_clock = 0
-                    newFen2 = board2.fen()
-                    newOppBoardDist[newFen2] += moveProbs[move]*totalProb2
-            assert len(newOppBoardDist) > 0
-            newOppBoardDists[newFen] = normalize(newOppBoardDist, adjust=True)
+                        if ((capturedMyPiece and captureSquare != real_capture_square_of_move(board2, revisedMove))
+                            or (not capturedMyPiece and real_capture_square_of_move(board2, revisedMove) != None)):
+                                continue
+                        board2.push(revisedMove)
+                        board2.halfmove_clock = 0
+                        newFen2 = board2.fen()
+                        newOppBoardDist[newFen2] = moveProbs[move]*totalProb2 + (0 if newFen2 not in newOppBoardDist else newOppBoardDist[newFen2])
+                assert len(newOppBoardDist) > 0
+                newOppBoardDist = normalize(newOppBoardDist, adjust=True)
+                ty = time.time()
+                newOppBoardDists[newFen] = newOppBoardDist
+                # newOppBoardDists[newFen] = normalize(newOppBoardDist, adjust=True)
+            parallel.set_temp_dict(newMyBoardDist, key=newMyBoardDistKey)
+            parallel.set_temp_dict(newOppBoardDists, key=newOppBoardDistsKey)
+        t1 = time.time()
+        # print(f"Thread {threading.get_ident()} for board {fen} with timeshare {timeShare} completed after {t1 - t0} seconds", flush=True)
+        # print(f"Process {mp.current_process()} for board {fen} with timeshare {timeShare} completed after {time.time() - t0} seconds", flush=True)
     def opp_move_result_update(self, capturedMyPiece, captureSquare, maxTime):
         self._check_invariants()
         #Calculate impossible boards
@@ -127,12 +148,17 @@ class BeliefState:
         
         self._check_invariants()
         
-        newMyBoardDist = defaultdict(float)
+        newMyBoardDist = dict()
         newOppBoardDists = dict()
         mbd = self.myBoardDist
-        for chunk in chunks(list(sorted(self.myBoardDist.keys(), key=self.myBoardDist.get, reverse=True))):
-            run_parallel(self.opp_move_result_update_helper, list((fen, min(1.5, maxTime*mbd[fen]), mbd[fen], newMyBoardDist, self.oppBoardDists[fen], newOppBoardDists, capturedMyPiece, captureSquare) for fen in chunk))
-            # gevent.joinall([gevent.spawn(self.opp_move_result_update_helper, fen, min(1.5, maxTime*mbd[fen]), mbd[fen], newMyBoardDist, self.oppBoardDists[fen], newOppBoardDists, capturedMyPiece, captureSquare) for fen in chunk])
+        sortedFens = list(sorted(self.myBoardDist.keys(), key=self.myBoardDist.get, reverse=True))
+        nmbdKey = parallel.set_temp_dict(newMyBoardDist)
+        nobdKey = parallel.set_temp_dict(newOppBoardDists)
+        parallel.run_parallel(self.opp_move_result_update_helper, list((fen, min(1.5, maxTime*mbd[fen]), mbd[fen], nmbdKey, self.oppBoardDists[fen], nobdKey, capturedMyPiece, captureSquare) for fen in sortedFens), threadingOnly=False)
+        newMyBoardDist = parallel.get_temp_dict(nmbdKey)
+        newOppBoardDists = parallel.get_temp_dict(nobdKey)
+            # print(newMyBoardDist)
+            # print(newOppBoardDists)
         # for fen, boardProb in self.myBoardDist.items():
         #     ##TODO: Make boards where they could have taken our king (and knew it) much more unlikely
         #     # self.opp_move_result_update_helper(fen, min(1.5, (maxTime*.5)/len(self.myBoardDist) + (maxTime*.5)*boardProb), boardProb, newMyBoardDist, self.oppBoardDists[fen], newOppBoardDists, capturedMyPiece, captureSquare)
@@ -326,7 +352,9 @@ class BeliefState:
 
     def display(self, stash=None):
         print(f'\tMY BOARD DISTRIBUTION: ({len(self.myBoardDist)})')
-        for fen, prob in self.myBoardDist.items():
+        sortedFens = list(sorted(self.myBoardDist, key=self.myBoardDist.get))
+        for fen in sortedFens:
+            prob = self.myBoardDist[fen]
             # if prob > .05:
             print('\t\t', fen, '\tprobability:', prob)
         if stash != None:

@@ -2,3 +2,5 @@ stockfish*.exe
 *.pyc
 gameLogs/*
 creds
+*.rdb
+redis*

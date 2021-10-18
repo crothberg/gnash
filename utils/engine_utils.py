@@ -2,6 +2,7 @@ import os
 import traceback
 import chess.engine
 import sys
+import utils.parallelism_utils as parallel
 
 os.environ['STOCKFISH_EXECUTABLE'] = os.path.dirname(os.path.realpath(__file__)) + '/../stockfish/stockfish_14_x64_avx2.exe'
 STOCKFISH_ENV_VAR = 'STOCKFISH_EXECUTABLE'
@@ -75,6 +76,7 @@ def quit_on_exceptions(func):
         except Exception as e:
             print(traceback.format_exc())
             shut_down_engines()
+            parallel.clean_up()
             raise Exception(e)
         finally:
             sys.stdout.flush()

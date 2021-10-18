@@ -87,7 +87,7 @@ class GnashBot(Player):
         self.beliefState = BeliefState(color, board.fen(), self.moveSelector, oppMoveSelector)
 
         if opponent_name in {"random", "RandomBot"}:
-            self.set_gear(4 if not self.isTest else 3)
+            self.set_gear(4 if not self.isTest else 0)
         else:
             self.set_gear(0)
 

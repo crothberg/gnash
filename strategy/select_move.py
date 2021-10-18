@@ -44,7 +44,7 @@ def get_move_dist_helper_2(testMoves, sampleFen, sampleFenProb, legalMoveScores,
             sampleBoardCopy = chess.Board(sampleFen)
             sampleBoardCopy.turn = not sampleBoardCopy.turn
             sampleBoardCopy.clear_stack()
-            nullScore = scorer.score(sampleBoardCopy, .05, not sampleBoardCopy.turn)
+            nullScore = scorer.score(sampleBoardCopy, .01, not sampleBoardCopy.turn)
             # if actuallyUs: print(f"Null score for board {sampleFen}: {nullScore}")
             baseScores[chess.Move.null()] = nullScore
     except Exception as e:
@@ -153,80 +153,75 @@ def get_move_dist_helper_2(testMoves, sampleFen, sampleFenProb, legalMoveScores,
         baseScores[move] = baseScores[revisedMove]
     for move, score in baseScores.items():
         if score >= 0:
-            timesSampled, avgScore = legalMoveScores[move]
-            totalScore = timesSampled*avgScore
-            legalMoveScores[move][0] += 1
-            legalMoveScores[move][1] = (totalScore + score)/legalMoveScores[move][0]
-            # print(move, legalMoveScores[move])
+            if legalMoveScores[move] == 100:
+                legalMoveScores[move] = score * sampleFenProb
+            else:
+                legalMoveScores[move] += score*sampleFenProb
         else:
-            timesSampled, avgScore = legalMoveScores[move]
-            totalScore = timesSampled*avgScore
-            legalMoveScores[move][0] += 1 + 1*sampleFenProb
-            legalMoveScores[move][1] = (totalScore)/legalMoveScores[move][0]
-            # legalMoveScores[move][0] = 1000
-            # legalMoveScores[move][1] = 0
-    # print(sampleFen)
-    # print(baseScores)
+            legalMoveScores[move] = 0
+            # timesSampled, avgScore = legalMoveScores[move]
+            # totalScore = timesSampled*avgScore
+            # legalMoveScores[move][0] += 1 + 1*sampleFenProb
+            # legalMoveScores[move][1] = (totalScore)/legalMoveScores[move][0]
 def get_move_dist(boardDist, maxTime, actuallyUs, gambleFactor, movesToConsider = None):
+    # print(f"Getting move dist with time {maxTime}")
+    # t = time.time()
     legalMoves = set(get_pseudo_legal_moves(boardDist))
     if movesToConsider != None:
         legalMoves = legalMoves.intersection(movesToConsider)
     if maxTime <= .2:
-        checkMoves, _ = get_silent_check_and_queenCheck_moves_dist(boardDist)
-        if movesToConsider != None:
-            checkMoves = checkMoves.intersection(movesToConsider)
-        threatenMateMoves = get_threaten_mate_moves_dist(boardDist) if not actuallyUs else set()
-        if movesToConsider != None:
-            threatenMateMoves = threatenMateMoves.intersection(movesToConsider)
-        numCheck = len(checkMoves.difference(threatenMateMoves))
-        numThreatenMate = len(threatenMateMoves)
-        numHarmless = len(legalMoves) - numCheck - numThreatenMate
-        if numThreatenMate == 0 and numCheck > 0:
-            return {move: (1/numCheck)*.4 if move in checkMoves else (1/numHarmless)*.6 for move in legalMoves}
-        if numThreatenMate > 0 and numCheck == 0:
-            return {move: (1/numThreatenMate)*.5 if move in threatenMateMoves else (1/numHarmless)*.5 for move in legalMoves}
-        if numThreatenMate > 0 and numCheck > 0:
-            probs = dict()
-            for move in legalMoves:
-                if move in threatenMateMoves: probs[move] = (1/numThreatenMate)*.25
-                elif move in checkMoves: probs[move] = (1/numCheck)*.25
-                else: probs[move] = (1/numHarmless)*.5
-            assert abs(sum(probs.values()) - 1) < .001
-            return probs
-        return {move: 1/len(legalMoves) for move in legalMoves}
+        return get_very_quick_move_dist(boardDist, actuallyUs, legalMoves, movesToConsider)
     # if maxTime <= .7:
     #     return get_quick_move_dist(boardDist, maxTime, movesToConsider = movesToConsider, actuallyUs=actuallyUs)
-    legalMoveScores = {move: [0.001, 0] for move in legalMoves} #[tries, averageScore]
-    threatenMateMoves = get_threaten_mate_moves_dist(boardDist) if not actuallyUs else set()
-    if movesToConsider != None:
-        threatenMateMoves = threatenMateMoves.intersection(movesToConsider)
-    for move in threatenMateMoves:
-        legalMoveScores[move][1] = 1
-    fenCounts = {fen: 1 for fen in boardDist}
+    # legalMoveScores = {move: [0.001, 0] for move in legalMoves} #[tries, averageScore]
+    legalMoveScores = {move: 100 for move in legalMoves}
+    movesSeenOnBoard = {board: set() for board in boardDist}
+    def nextBoardAndMoves(n=10):
+        moveLikelihoods = normalize({m:s for m,s in legalMoveScores.items()}, adjust=True, giveToZeros=.01, raiseNum=2)
+        boardExploreScores = {board: 0 for board in boardDist}
+        for fen in boardDist:
+            percentUnexplored = 0
+            legalMovesOnBoard = get_pseudo_legal_moves({fen})
+            for move in legalMovesOnBoard:
+                if move not in movesSeenOnBoard[fen]: percentUnexplored += moveLikelihoods[move]
+            boardExploreScores[fen] = percentUnexplored*boardDist[fen]
+        fenToExplore = max(boardExploreScores, key=boardExploreScores.get)
+        if boardExploreScores[fenToExplore] < 0.0000001:
+            return None, None, True
+        legalMovesOnBoard = get_pseudo_legal_moves({fenToExplore})
+        moves = sorted(moveLikelihoods, key=lambda move: -1 if (move not in legalMovesOnBoard or move in movesSeenOnBoard[fenToExplore]) else moveLikelihoods[move], reverse=True)
+        moves = list(move for move in list(moves)[:n] if (move in legalMovesOnBoard and move not in movesSeenOnBoard[fenToExplore]))
+        # print(f"Scores: {sorted(boardExploreScores.values())}")
+        # print(f"Chose moves with scores {[legalMoveScores[move] for move in moves]}")
+        # print(f"on {fenToExplore} with exploreScore {boardExploreScores[fenToExplore]}")
+        return fenToExplore, moves, False
+
     startTime = time.time()
-    totalTriesSoFar = 0
     count = 0
     lastIterTime = 0
-    while (time.time() - startTime) < (maxTime - lastIterTime):
+    while (time.time() - startTime) < (maxTime - lastIterTime) or max(legalMoveScores.values())>1:
+        # print(max(legalMoveScores.values()))
         iterStartTime = time.time()
-        sampleFen = choose_1_board(fenCounts, boardDist)
-        if totalTriesSoFar == 0:
-            testMoves = list(set(get_all_moves(chess.Board(sampleFen))).intersection(legalMoveScores))
-        else:
-            testMoves = choose_n_moves(legalMoveScores, 5, 1, totalTriesSoFar, sampleFen)
+        sampleFen, testMoves, terminate = nextBoardAndMoves()
+        if terminate:
+            break
+        # print(f"Exploring sampleFen {sampleFen}")
+        # print(f"Exploring moves {testMoves}")
+        for move in testMoves: movesSeenOnBoard[sampleFen].add(move)
+        # if totalTriesSoFar == 0:
+        #     testMoves = list(set(get_all_moves(chess.Board(sampleFen))).intersection(legalMoveScores))
+        # else:
+        #     testMoves = choose_n_moves(legalMoveScores, 5, 1, totalTriesSoFar, sampleFen)
         get_move_dist_helper_2(testMoves, sampleFen, boardDist[sampleFen], legalMoveScores, actuallyUs, gambleFactor)
-        # allChunks = chunks(testMoves, NUM_ENGINES)
-        # for moves in allChunks:
-            # get_move_dist_helper(move, sampleFen, legalMoveScores, analysis_engines[i%len(analysis_engines)], actuallyUs)
-            # gevent.joinall([gevent.spawn(get_move_dist_helper, move, sampleFen, legalMoveScores, engine, count, actuallyUs) for (move, engine) in zip(moves, analysis_engines)])
-            # if len(list(allChunks))>1:
-            #     time.sleep(.1)
-        totalTriesSoFar += len(testMoves)
         count += 1
         if count>1: lastIterTime = time.time() - iterStartTime
+    # print(legalMoveScores)
     # probs = normalize({move: legalMoveScores[move][1] for move in legalMoves}, adjust=True, raiseNum=5, giveToZeros=.005)
-    probs = normalize({move: legalMoveScores[move][1] for move in legalMoves}, adjust=True, raiseNum=4, giveToZeros=.005)
-    
+    # probs = normalize({move: legalMoveScores[move] for move in legalMoves}, adjust=True, raiseNum=4, giveToZeros=.005)
+    probs = normalize(legalMoveScores, adjust=True, giveToZeros=.1, raiseNum=6)
+    if actuallyUs: 
+        for move in list(sorted(probs, key=probs.get))[-7:]:
+            print(f"{move}: {probs[move]}")
     #if actually us, enter a tie-breaking process if necessary
     if actuallyUs:
         bestMove = max(probs, key=probs.get)
@@ -247,7 +242,7 @@ def get_move_dist(boardDist, maxTime, actuallyUs, gambleFactor, movesToConsider 
                 if move not in probs:
                     probs[move] = 0
             normalize(probs)
-
+    # print(time.time()-t)
     return probs
 
 def get_quick_move_dist(boardDist, maxTime, movesToConsider = None, actuallyUs = False):
@@ -285,18 +280,32 @@ def get_quick_move_dist(boardDist, maxTime, movesToConsider = None, actuallyUs =
         update_probs(sampleBoard)
     return normalize(probs, adjust=True)
 
-def choose_n_moves(moveScores, n, c, totalTriesSoFar, fen):
-    board = chess.Board(fen)
-    allMoves = get_all_moves(board)
-    sorted_moves = sorted(moveScores, key=lambda move: -100 if move not in allMoves else (moveScores[move][1] + c*(math.log(totalTriesSoFar)/moveScores[move][0])**.5), reverse=True)
-    nMoves = {move for move in sorted_moves[:n] if move in allMoves}
-    return nMoves
-
-def choose_1_board(fenCounts, dist):
-    fen = max(dist, key=lambda x: (dist[x]**2.5)/(fenCounts[x]**1.25))
-    fenCounts[fen] += 1
-    # print(f"sampled board {fen}")
-    return fen
+def get_very_quick_move_dist(boardDist, actuallyUs, legalMoves, movesToConsider):
+    # return {move: 1/len(legalMoves) for move in legalMoves}
+    checkMoves, _ = get_silent_check_and_queenCheck_moves_dist(boardDist)
+    if movesToConsider != None:
+        checkMoves = checkMoves.intersection(movesToConsider)
+    threatenMateMoves = get_threaten_mate_moves_dist(boardDist) if not actuallyUs else set()
+    if movesToConsider != None:
+        threatenMateMoves = threatenMateMoves.intersection(movesToConsider)
+    numCheck = len(checkMoves.difference(threatenMateMoves))
+    numThreatenMate = len(threatenMateMoves)
+    numHarmless = len(legalMoves) - numCheck - numThreatenMate
+    if numThreatenMate == 0 and numCheck > 0:
+        return {move: (1/numCheck)*.4 if move in checkMoves else (1/numHarmless)*.6 for move in legalMoves}
+    if numThreatenMate > 0 and numCheck == 0:
+        return {move: (1/numThreatenMate)*.5 if move in threatenMateMoves else (1/numHarmless)*.5 for move in legalMoves}
+    if numThreatenMate > 0 and numCheck > 0:
+        probs = dict()
+        for move in legalMoves:
+            if move in threatenMateMoves: probs[move] = (1/numThreatenMate)*.25
+            elif move in checkMoves: probs[move] = (1/numCheck)*.25
+            else: probs[move] = (1/numHarmless)*.5
+        assert abs(sum(probs.values()) - 1) < .001
+        # print(time.time()-t)
+        return probs
+    # print(time.time()-t)
+    return {move: 1/len(legalMoves) for move in legalMoves}
 
 def get_stockfish_move(fen : str, maxTime, movesToConsider=None, actuallyUs=False) -> Move:
     board = chess.Board(fen)

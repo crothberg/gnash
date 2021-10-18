@@ -27,15 +27,15 @@ class MoveSelector:
                 move.promotion = chess.QUEEN
             return move
         moveDist = self.get_move_dist(beliefState.myBoardDist, maxTime=self.timePerMove)
-        print(moveDist)
+        # print(moveDist)
         topMoves = sorted(moveDist, key=moveDist.get, reverse=True)[:5]
-        print([(move, moveDist[move]) for move in topMoves])
+        # print([(move, moveDist[move]) for move in topMoves])
         move = topMoves[0]
-        print(moveDist[move])
+        # print(moveDist[move])
         if move != None and move.promotion != None and move.promotion != chess.KNIGHT:
             move.promotion = chess.QUEEN
         choices = normalize({move: moveDist[move] for move in topMoves}, adjust=True, giveToZeros=0, raiseNum=7)
-        print(choices)
+        # print(choices)
         return sample(choices)
 
     def get_move_dist(self, boardDist, maxTime : float, movesToConsider=None):
