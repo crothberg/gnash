@@ -1,7 +1,8 @@
 # from multiprocessing import Pool
 from multiprocessing.dummy import Pool
 
-POOL_SIZE = 15#mp.cpu_count()-1
+POOL_SIZE = 100 #mp.cpu_count()-1
+# ^NOTE: POOL_SIZE=100 works for threading, but is too big for multiprocessing
 
 def chunks(lst, chunkSize=POOL_SIZE):
     for i in range(0, len(lst), chunkSize):
