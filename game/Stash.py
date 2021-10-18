@@ -36,7 +36,7 @@ class Stash:
         while not self.kill and (time.time()-self.lastHistoryAddedTime < 1000):
             acquired = self.lock.acquire()
             assert acquired
-            self.improve_stash(maxAtATime=50, background=True)
+            self.improve_stash(maxAtATime=40, background=True)
             self.lock.release()
             time.sleep(.15)
 

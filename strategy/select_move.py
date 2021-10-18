@@ -154,9 +154,9 @@ def get_move_dist_helper_2(testMoves, sampleFen, sampleFenProb, legalMoveScores,
     for move, score in baseScores.items():
         if score >= 0:
             if legalMoveScores[move] == 100:
-                legalMoveScores[move] = score * sampleFenProb
+                legalMoveScores[move] = score * (sampleFenProb**3)
             else:
-                legalMoveScores[move] += score*sampleFenProb
+                legalMoveScores[move] += score * (sampleFenProb**3)
         else:
             legalMoveScores[move] = 0
             # timesSampled, avgScore = legalMoveScores[move]
@@ -171,13 +171,26 @@ def get_move_dist(boardDist, maxTime, actuallyUs, gambleFactor, movesToConsider 
         legalMoves = legalMoves.intersection(movesToConsider)
     if maxTime <= .2:
         return get_very_quick_move_dist(boardDist, actuallyUs, legalMoves, movesToConsider)
-    # if maxTime <= .7:
-    #     return get_quick_move_dist(boardDist, maxTime, movesToConsider = movesToConsider, actuallyUs=actuallyUs)
+    if maxTime <= .5:
+        return get_quick_move_dist(boardDist, maxTime, movesToConsider = movesToConsider, actuallyUs=actuallyUs)
     # legalMoveScores = {move: [0.001, 0] for move in legalMoves} #[tries, averageScore]
+    # print(len(legalMoves))
     legalMoveScores = {move: 100 for move in legalMoves}
     movesSeenOnBoard = {board: set() for board in boardDist}
-    def nextBoardAndMoves(n=10):
-        moveLikelihoods = normalize({m:s for m,s in legalMoveScores.items()}, adjust=True, giveToZeros=.01, raiseNum=2)
+    def getMovePlayLikelihoods():
+        likelihoods = {}
+        for move in legalMoveScores:
+            totalSeen = sum([boardDist[board] for board in boardDist if move in movesSeenOnBoard[board]])
+            likelihoods[move] = (legalMoveScores[move]/totalSeen) if totalSeen > 0 else 0
+        return normalize(likelihoods, adjust=True, giveToZeros=.01, raiseNum=5)
+    def getMoveExploreLikelihoods():
+        likelihoods = {}
+        for move in legalMoveScores:
+            totalSeen = sum([boardDist[board] for board in boardDist if move in movesSeenOnBoard[board]])
+            likelihoods[move] = (legalMoveScores[move]/totalSeen) if totalSeen > 0 else 100
+        return normalize(likelihoods, adjust=True, giveToZeros=.01, raiseNum=4)
+    def nextBoardAndMoves(n=20):
+        moveLikelihoods = getMoveExploreLikelihoods()
         boardExploreScores = {board: 0 for board in boardDist}
         for fen in boardDist:
             percentUnexplored = 0
@@ -218,7 +231,7 @@ def get_move_dist(boardDist, maxTime, actuallyUs, gambleFactor, movesToConsider 
     # print(legalMoveScores)
     # probs = normalize({move: legalMoveScores[move][1] for move in legalMoves}, adjust=True, raiseNum=5, giveToZeros=.005)
     # probs = normalize({move: legalMoveScores[move] for move in legalMoves}, adjust=True, raiseNum=4, giveToZeros=.005)
-    probs = normalize(legalMoveScores, adjust=True, giveToZeros=.1, raiseNum=6)
+    probs = getMovePlayLikelihoods()
     if actuallyUs: 
         for move in list(sorted(probs, key=probs.get))[-7:]:
             print(f"{move}: {probs[move]}")

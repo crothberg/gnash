@@ -1,4 +1,5 @@
 from utils.engine_utils import quit_on_exceptions
+import utils.engine_utils as engines
 from utils.util import *
 import chess
 from reconchess import *
@@ -9,28 +10,16 @@ STOCKFISH_ENV_VAR = 'STOCKFISH_EXECUTABLE'
 #A fast bot for just in case
 ##TODO: Improve play when no enemy king is found on board
 class HelperBot():
+    @quit_on_exceptions
     def __init__(self):
         self.board = None
         self.color = None
         self.my_piece_captured_square = None
-
-        # make sure stockfish environment variable exists
-        if STOCKFISH_ENV_VAR not in os.environ:
-            raise KeyError(
-                'TroutBot requires an environment variable called "{}" pointing to the Stockfish executable'.format(
-                    STOCKFISH_ENV_VAR))
-
-        # make sure there is actually a file
-        self.stockfish_path = os.environ[STOCKFISH_ENV_VAR]
-        if not os.path.exists(self.stockfish_path):
-            raise ValueError('No stockfish executable found at "{}"'.format(self.stockfish_path))
         
     @quit_on_exceptions
     def handle_game_start(self, color: Color, board: chess.Board, opponent_name: str):
         self.color = color
         self.board = board
-        # initialize the stockfish engine
-        self.engine = chess.engine.SimpleEngine.popen_uci(self.stockfish_path, setpgrp=True)
         self.lastKingSquare = board.king(not self.color)
         self.kingSquare = board.king(not self.color)
 
@@ -137,7 +126,7 @@ class HelperBot():
         try:
             self.board.turn = self.color
             self.board.clear_stack()
-            result = self.engine.play(self.board, chess.engine.Limit(time=0.3))
+            result = engines.play(self.board, .3)
             return result.move
         except chess.engine.EngineTerminatedError:
             print('Stockfish Engine died')

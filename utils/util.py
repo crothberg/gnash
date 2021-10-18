@@ -49,13 +49,10 @@ def normalize(dist, adjust = False, giveToZeros=.10, raiseNum = 0):
                 dist[e] /= total
     return dist
 
-def normalize_board_dist_helper(fen, distKey):
+def normalize_board_dist_helper(fen, dist):
     board = chess.Board(fen)
     boardScore = score(board, .15, not board.turn)
-    with parallel.lock(distKey):
-        dist = parallel.get_temp_dict(key=distKey)
-        dist[fen] = boardScore
-        parallel.set_temp_dict(dist, key=distKey)
+    dist[fen] = boardScore
 ##SHOULD ONLY BE CALLED BY US
 def normalize_our_board_dist(dist, ourColor):
     if len(dist) == 0:
@@ -78,9 +75,7 @@ def normalize_our_board_dist(dist, ourColor):
         print(f"adjusting dist of size {len(dist)}...")
         t0 = time.time()
         # input("Here. Hit any key to continue")
-        parallelKey = parallel.set_temp_dict(dist)
-        parallel.run_parallel(normalize_board_dist_helper, list((fen, parallelKey) for fen in list(dist.keys())))
-        dist = parallel.get_temp_dict(parallelKey)
+        parallel.run_parallel(normalize_board_dist_helper, list((fen, dist) for fen in list(dist.keys())))
             # gevent.joinall([gevent.spawn(normalize_board_dist_helper, fen, dist) for fen in chunk])
         # print(dist)
         dist = normalize(dist, adjust=True, giveToZeros=.3, raiseNum=6)

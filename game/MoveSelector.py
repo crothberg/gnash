@@ -5,7 +5,7 @@ import strategy.select_move as strategy
 
 class MoveSelector:
     def __init__(self, actuallyUs, gambleFactor, timePerMove):
-        assert 0 <= gambleFactor <= 1
+        assert 0 <= gambleFactor <= 2
         self.actuallyUs = actuallyUs
         self.gambleFactor = gambleFactor
         self.timePerMove = timePerMove

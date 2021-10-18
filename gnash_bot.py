@@ -15,10 +15,8 @@ import time
 import datetime
 import requests
 
-##TODO: Bonus to positions where king has few empty squares next to it
 ##TODO: To play quickly, add "quick_handle_opp_move":
 #          get n stockfish moves for likely boards and (for opp) check! moves for unlikely boards
-##TODO: If they could have made a good move but didn't, make that board less likely
 ##TODO: Fix bug where we took their king (but weren't sure we would), and unstash boards after we capture it
 ##TODO: Combine oppMoveResultUpdate and senseUpdate?
 ##TODO: Add boardDist evaluation
@@ -36,7 +34,7 @@ class GnashBot(Player):
         self.isTest = isTest
         self.helperBot = HelperBot()
         self.useHelperBot = False
-        self.useHelperBotTime = 120
+        self.useHelperBotTime = 90
         self.turn = 0
         self.useLocal = True
         self.useService = False
@@ -67,20 +65,20 @@ class GnashBot(Player):
         self.set_gear(0)
         profiles = {
             #us and them
-            "oracle": (.2, 0.001), #meh.
+            "oracle": (.02, 0.001),
             "random": (1.0, None),
             "RandomBot": (1.0, None),
-            "attacker": (.3, .3), #seems to work
-            "AttackBot": (.3, .3), #seems to work
-            "penumbra": (.02, .85), #feel somewhat solid on this
-            "Fianchetto": (.02, .6), # literally no idea
-            "StrangeFish2": (.2, 0.001), # needs tuning
-            "trout": (.3, .1), #This one is solid
-            "TroutBot": (.3, .1), #This one is solid
+            "attacker": (.3, 1.5),
+            "AttackBot": (.3, 1.5),
+            "penumbra": (.02, .85),
+            "Fianchetto": (.02, .6),
+            "StrangeFish2": (.2, .05),
+            "trout": (.3, .1),
+            "TroutBot": (.3, .1),
         }
         gUs, gThem = profiles[self.opponent_name] if self.opponent_name in profiles else (None, None)
         gUs = gUs or .03
-        gThem = gThem or .3
+        gThem = gThem or .1
         self.moveSelector = MoveSelector(actuallyUs=True, gambleFactor=gUs, timePerMove=self.chooseMoveMaxTime)
         oppMoveSelector = MoveSelector(actuallyUs=False, gambleFactor=gThem, timePerMove=None)
 
@@ -98,7 +96,7 @@ class GnashBot(Player):
             self.handleSenseMaxTime = 5
             self.handleMoveMaxTime = 3
             self.chooseMoveMaxTime = 5
-            self.maxInDist = 200
+            self.maxInDist = 100
         if gear == 1:
             print("Picking up speed...")
             self.handleOppMoveMaxTime = 9
@@ -162,6 +160,7 @@ class GnashBot(Player):
 
     @quit_on_exceptions
     def get_new_boards(self, urgent=True):
+        if self.useHelperBot: return
         extraTime = (self.gameEndTime - time.time()) - self.useHelperBotTime
         if not self.useService:
             print(f"Requesting new boards (urgent = {urgent})...")
@@ -272,7 +271,10 @@ class GnashBot(Player):
         self.updateSpeed()
         t0 = time.time()
         if self.useHelperBot:
-            return self.helperBot.choose_move(move_actions, seconds_left)
+            print("Choosing move with helper bot!")
+            move = self.helperBot.choose_move(move_actions, seconds_left)
+            print(f"Helper bot chose move {move}")
+            return move
         print(f"Choosing move with {self.gameEndTime - time.time()} seconds remaining...")
         move = self.moveSelector.select_move(self.beliefState)
         print("MOVE:", move)
@@ -302,7 +304,7 @@ class GnashBot(Player):
         try:
             result = self.beliefState.our_move_result_update(requested_move, taken_move, captured_opponent_piece, capture_square, maxTime=self.handleMoveMaxTime)
             if result == "won":
-                self.handle_game_end(self.color, WinReason.KING_CAPTURE, None)
+                # self.handle_game_end(self.color, WinReason.KING_CAPTURE, None)
                 return
         except EmptyBoardDist:
             self.get_new_boards()

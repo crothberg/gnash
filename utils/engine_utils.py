@@ -1,4 +1,5 @@
 import os
+import threading
 import traceback
 import chess.engine
 import sys
@@ -22,6 +23,7 @@ class EngineGroup:
     nextId = 0
     engines = dict()
     availableEngines = set()
+    lock = threading.Lock()
     def add_engine():
         new_engine = chess.engine.SimpleEngine.popen_uci(stockfish_path, setpgrp=True)
         engineId = EngineGroup.nextId
@@ -30,10 +32,12 @@ class EngineGroup:
         EngineGroup.engines[engineId] = new_engine
         EngineGroup.availableEngines.add(engineId)
     def get_available_engine():
+        EngineGroup.lock.acquire()
         if len(EngineGroup.availableEngines) == 0:
             EngineGroup.add_engine()
             # print(f'Engine list is now {EngineGroup.engines}', flush=True)
         engineId = EngineGroup.availableEngines.pop()
+        EngineGroup.lock.release()
         return EngineGroup.engines[engineId], engineId
     def release_engine(engineId):
         EngineGroup.availableEngines.add(engineId)

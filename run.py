@@ -1,11 +1,7 @@
 from multiprocessing import freeze_support
 
 def main():
-    import os
-    import traceback, sys
     from reconchess import load_player, play_local_game, LocalGame
-    import reconchess
-    import chess
     from gnash_bot import GnashBot
     from reconchess.bots.trout_bot import TroutBot
     from reconchess.bots.random_bot import RandomBot
@@ -16,9 +12,9 @@ def main():
     game = LocalGame(SECONDS_PER_PLAYER)
 
     # white = GnashBot(isTest=True)
-    white = RandomBot()
+    # white = RandomBot()
     # white = AttackerBot()
-    # white = TroutBot()
+    white = TroutBot()
     black = GnashBot(isTest=True)
 
     # opponent.handle_game_start(chess.WHITE, game.board.copy(), 'Trout')

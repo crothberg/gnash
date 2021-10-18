@@ -65,57 +65,47 @@ class BeliefState:
         # gevent.joinall([gevent.spawn(BeliefState.opp_sense_result_update_helper, self, fen, boardDist) for fen, boardDist in self.oppBoardDists.items()])
         self._check_invariants()
 
-    def opp_move_result_update_helper(self, fen, timeShare, boardProb, newMyBoardDistKey, oppBoardDist, newOppBoardDistsKey, capturedMyPiece, captureSquare):
+    def opp_move_result_update_helper(self, fen, timeShare, boardProb, newMyBoardDist, oppBoardDist, newOppBoardDists, capturedMyPiece, captureSquare):
         # print(f"Opening thread {threading.get_ident()} for board {fen} with time {timeShare}", flush=True)
         # print(f"Opening process {mp.current_process()} for board {fen} with time {timeShare}", flush=True)
         t0 = time.time()
         moveProbs = self.oppMoveSelector.get_move_dist(oppBoardDist, maxTime=timeShare)
         # print(f"Thread {threading.get_ident()} for board {fen} with timeshare {timeShare} got move dist after {time.time() - t0} seconds", flush=True)
-        with parallel.lock(newMyBoardDistKey), parallel.lock(newOppBoardDistsKey):
-            newMyBoardDist = parallel.get_temp_dict(newMyBoardDistKey)
-            newOppBoardDists = parallel.get_temp_dict(newOppBoardDistsKey)
-            for move, moveProb in moveProbs.items():
+        for move, moveProb in moveProbs.items():
+            board = chess.Board(fen)
+            revisedMove = revise_move(board, move) if move != chess.Move.null() else chess.Move.null()
+            revisedMove = revisedMove or chess.Move.null()
+            if ((capturedMyPiece and captureSquare != real_capture_square_of_move(board, revisedMove))
+                or (not capturedMyPiece and real_capture_square_of_move(board, revisedMove) != None)):
+                    continue
+            board.push(revisedMove)
+            board.halfmove_clock = 0
+            newFen = board.fen()
+            newMyBoardDist[newFen] = moveProb*boardProb + (newMyBoardDist[newFen] if newFen in newMyBoardDist else 0)
+            newOppBoardDist = dict()
+            if self.catchingUp:
+                newOppBoardDist = {newFen: 1.0}
+            else:
                 board = chess.Board(fen)
-                revisedMove = revise_move(board, move) if move != chess.Move.null() else chess.Move.null()
-                revisedMove = revisedMove or chess.Move.null()
-                if ((capturedMyPiece and captureSquare != real_capture_square_of_move(board, revisedMove))
-                    or (not capturedMyPiece and real_capture_square_of_move(board, revisedMove) != None)):
+                for fen2, totalProb2 in oppBoardDist.items():
+                    board2 = chess.Board(fen2)
+                    revisedMoveOnRealBoard = revise_move(board, move) if move != chess.Move.null() else chess.Move.null()
+                    revisedMoveOnRealBoard = revisedMoveOnRealBoard or chess.Move.null()
+                    revisedMove = revise_move(board, move) if move != chess.Move.null() else chess.Move.null()
+                    revisedMove = revisedMove or chess.Move.null()
+                    if revisedMove != revisedMoveOnRealBoard:
                         continue
-                board.push(revisedMove)
-                board.halfmove_clock = 0
-                newFen = board.fen()
-                tx = time.time()
-                newMyBoardDist[newFen] = moveProb*boardProb + (newMyBoardDist[newFen] if newFen in newMyBoardDist else 0)
-                newOppBoardDist = dict()
-                if self.catchingUp:
-                    newOppBoardDist = {newFen: 1.0}
-                else:
-                    board = chess.Board(fen)
-                    for fen2, totalProb2 in oppBoardDist.items():
-                        board2 = chess.Board(fen2)
-                        revisedMoveOnRealBoard = revise_move(board, move) if move != chess.Move.null() else chess.Move.null()
-                        revisedMoveOnRealBoard = revisedMoveOnRealBoard or chess.Move.null()
-                        revisedMove = revise_move(board, move) if move != chess.Move.null() else chess.Move.null()
-                        revisedMove = revisedMove or chess.Move.null()
-                        if revisedMove != revisedMoveOnRealBoard:
+                    if ((capturedMyPiece and captureSquare != real_capture_square_of_move(board2, revisedMove))
+                        or (not capturedMyPiece and real_capture_square_of_move(board2, revisedMove) != None)):
                             continue
-                        if ((capturedMyPiece and captureSquare != real_capture_square_of_move(board2, revisedMove))
-                            or (not capturedMyPiece and real_capture_square_of_move(board2, revisedMove) != None)):
-                                continue
-                        board2.push(revisedMove)
-                        board2.halfmove_clock = 0
-                        newFen2 = board2.fen()
-                        newOppBoardDist[newFen2] = moveProbs[move]*totalProb2 + (0 if newFen2 not in newOppBoardDist else newOppBoardDist[newFen2])
-                assert len(newOppBoardDist) > 0
-                newOppBoardDist = normalize(newOppBoardDist, adjust=True)
-                ty = time.time()
-                newOppBoardDists[newFen] = newOppBoardDist
-                # newOppBoardDists[newFen] = normalize(newOppBoardDist, adjust=True)
-            parallel.set_temp_dict(newMyBoardDist, key=newMyBoardDistKey)
-            parallel.set_temp_dict(newOppBoardDists, key=newOppBoardDistsKey)
+                    board2.push(revisedMove)
+                    board2.halfmove_clock = 0
+                    newFen2 = board2.fen()
+                    newOppBoardDist[newFen2] = moveProbs[move]*totalProb2 + (0 if newFen2 not in newOppBoardDist else newOppBoardDist[newFen2])
+            assert len(newOppBoardDist) > 0
+            newOppBoardDist = normalize(newOppBoardDist, adjust=True)
+            newOppBoardDists[newFen] = newOppBoardDist
         t1 = time.time()
-        # print(f"Thread {threading.get_ident()} for board {fen} with timeshare {timeShare} completed after {t1 - t0} seconds", flush=True)
-        # print(f"Process {mp.current_process()} for board {fen} with timeshare {timeShare} completed after {time.time() - t0} seconds", flush=True)
     def opp_move_result_update(self, capturedMyPiece, captureSquare, maxTime):
         self._check_invariants()
         #Calculate impossible boards
@@ -152,11 +142,7 @@ class BeliefState:
         newOppBoardDists = dict()
         mbd = self.myBoardDist
         sortedFens = list(sorted(self.myBoardDist.keys(), key=self.myBoardDist.get, reverse=True))
-        nmbdKey = parallel.set_temp_dict(newMyBoardDist)
-        nobdKey = parallel.set_temp_dict(newOppBoardDists)
-        parallel.run_parallel(self.opp_move_result_update_helper, list((fen, min(1.5, maxTime*mbd[fen]), mbd[fen], nmbdKey, self.oppBoardDists[fen], nobdKey, capturedMyPiece, captureSquare) for fen in sortedFens), threadingOnly=False)
-        newMyBoardDist = parallel.get_temp_dict(nmbdKey)
-        newOppBoardDists = parallel.get_temp_dict(nobdKey)
+        parallel.run_parallel(self.opp_move_result_update_helper, list((fen, min(1.5, maxTime*mbd[fen]), mbd[fen], newMyBoardDist, self.oppBoardDists[fen], newOppBoardDists, capturedMyPiece, captureSquare) for fen in sortedFens), threadingOnly=False)
             # print(newMyBoardDist)
             # print(newOppBoardDists)
         # for fen, boardProb in self.myBoardDist.items():
@@ -176,14 +162,34 @@ class BeliefState:
         self._condense_opp_board_dists()
         self._check_invariants()
 
+
+    def _our_move_result_update_helper(self, oldFen, maxTime, captureSquare):
+        oppBoardDist = self.oppBoardDists[oldFen]
+        prob = self.myBoardDist[oldFen]
+        newOppBoardDist = defaultdict(float)
+        believedMoveProbs = self.believedMoveSelector.get_move_dist(oppBoardDist, maxTime=maxTime*prob)
+        for move in get_all_moves(chess.Board(oldFen)):
+            if move not in believedMoveProbs:
+                believedMoveProbs[move] = 0
+        for fen, fenProb in oppBoardDist.items():
+            allMoves = get_all_moves(chess.Board(fen))
+            for move, moveProb in believedMoveProbs.items():
+                if move not in allMoves:
+                    continue
+                board2 = chess.Board(fen)
+                revisedMove = revise_move(board2, move) if move != chess.Move.null() else chess.Move.null()
+                revisedMove = revisedMove or chess.Move.null()
+                if (real_capture_square_of_move(board2, revisedMove) != captureSquare):
+                    continue
+                board2.push(revisedMove)
+                board2.halfmove_clock = 0
+                newFen = board2.fen()
+                newOppBoardDist[newFen] += moveProb*fenProb
+        self.oppBoardDists[oldFen] = normalize(newOppBoardDist, adjust=True)
+
     def our_move_result_update(self, requestedMove, takenMove, capturedOppPiece, captureSquare, maxTime):
-        totalTimeCheckingInvariants = 0
-        totalDistSize = len(self.myBoardDist)
-        t = time.time()
         self._check_invariants()
-        totalTimeCheckingInvariants += time.time()-t
         #Calculate impossible boards
-        t = time.time()
         impossibleBoards = set()
         kingless = 0
         legal = 0
@@ -209,7 +215,6 @@ class BeliefState:
         # print(f"Finding impossible boards took {time.time() - t} seconds")
                     
         #Remove impossible board views
-        t = time.time()
         try:
             BeliefState._remove_impossible_boards(self.myBoardDist, impossibleBoards)
         except EmptyBoardDist:
@@ -231,47 +236,14 @@ class BeliefState:
                     impossibleBoards.add(board.fen())
                     continue
             BeliefState._remove_impossible_boards(self.oppBoardDists[boardKey], impossibleBoards)
-        # print(f"Removing impossible boards took {time.time() - t} seconds")
 
-        t = time.time()
         self._check_invariants()
-        totalTimeCheckingInvariants += time.time()-t
         
-        timeSpentGettingMoveDists = 0.0
         if not self.catchingUp:
-            for oldFen, oppBoardDist in self.oppBoardDists.items():
-                prob = self.myBoardDist[oldFen]
-                newOppBoardDist = defaultdict(float)
-                t = time.time()
-                believedMoveProbs = self.believedMoveSelector.get_move_dist(oppBoardDist, maxTime=maxTime*prob)
-                for move in get_all_moves(chess.Board(oldFen)):
-                    if move not in believedMoveProbs:
-                        # print("MOVE NOT IN PROBS:", move)
-                        believedMoveProbs[move] = 0
-                timeSpentGettingMoveDists += time.time() - t
-                # print(f"Got move dist with time {maxTime*prob} in {time.time() - t} seconds...")
-                board = chess.Board(oldFen)
-                for fen, fenProb in oppBoardDist.items():
-                    allMoves = get_all_moves(chess.Board(fen))
-                    for move, moveProb in believedMoveProbs.items():
-                        if move not in allMoves:
-                            continue
-                        board2 = chess.Board(fen)
-                        revisedMove = revise_move(board2, move) if move != chess.Move.null() else chess.Move.null()
-                        revisedMove = revisedMove or chess.Move.null()
-                        if (real_capture_square_of_move(board2, revisedMove) != captureSquare):
-                            continue
-                        board2.push(revisedMove)
-                        board2.halfmove_clock = 0
-                        newFen = board2.fen()
-                        newOppBoardDist[newFen] += moveProb*fenProb
-                self.oppBoardDists[oldFen] = normalize(newOppBoardDist, adjust=True)
-            t = time.time()
+            parallel.run_parallel(self._our_move_result_update_helper, list((fen, maxTime, captureSquare) for fen in self.oppBoardDists))
             self._check_invariants()
-            totalTimeCheckingInvariants += time.time()-t
 
         #Update myBoardDist keys based on taken move
-        t = time.time()
         newBoardDist = defaultdict(float)
         newOppBoardDists = dict()
         for fen in self.myBoardDist:
@@ -288,13 +260,7 @@ class BeliefState:
         else:
             self.oppBoardDists = newOppBoardDists
         self._condense_opp_board_dists()
-        # print(f"Updating board dists with move took {time.time() - t} seconds")
-        t = time.time()
         self._check_invariants()
-        totalTimeCheckingInvariants += time.time()-t
-        # print(f"For max time {maxTime} and distSize {totalDistSize} spent {timeSpentGettingMoveDists} getting move dists")
-        # print(f"For max time {maxTime} and distSize {totalDistSize} spent {totalTimeCheckingInvariants} checking invariants")
-
 
     def _condense_opp_board_dists(self, maxBoards=400):
         self._check_invariants()
