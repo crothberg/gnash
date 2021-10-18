@@ -59,7 +59,7 @@ class BeliefState:
         # gevent.joinall([gevent.spawn(BeliefState.opp_sense_result_update_helper, self, fen, boardDist) for fen, boardDist in self.oppBoardDists.items()])
         self._check_invariants()
 
-    def opp_move_result_update_helper(self, fen, timeShare, boardProb, newMyBoardDist, oppBoardDist, newOppBoardDists, capturedMyPiece, captureSquare):
+    def opp_move_result_update_helper(self, fen, timeShare, boardProb, newMyBoardDistName, oppBoardDist, newOppBoardDistsName, capturedMyPiece, captureSquare):
         # print(f"Opening thread {threading.get_ident()} for board {fen}", flush=True)
         moveProbs = self.oppMoveSelector.get_move_dist(oppBoardDist, maxTime=timeShare)
         for move, moveProb in moveProbs.items():
@@ -72,7 +72,13 @@ class BeliefState:
             board.push(revisedMove)
             board.halfmove_clock = 0
             newFen = board.fen()
-            newMyBoardDist[newFen] += moveProb*boardProb
+            with redisCache.lock(newMyBoardDistName+'_lock'):
+                dist = json.loads(redisCache.get(newMyBoardDistName))
+                if newFen in dist:
+                    dist[newFen] += moveProb*boardProb
+                else:
+                    dist[newFen] = moveProb*boardProb
+            # newMyBoardDist[newFen] += moveProb*boardProb
             newOppBoardDist = defaultdict(float)
             if self.catchingUp:
                 newOppBoardDist = {newFen: 1.0}
@@ -94,7 +100,11 @@ class BeliefState:
                     newFen2 = board2.fen()
                     newOppBoardDist[newFen2] += moveProbs[move]*totalProb2
             assert len(newOppBoardDist) > 0
-            newOppBoardDists[newFen] = normalize(newOppBoardDist, adjust=True)
+            with redisCache.lock(newOppBoardDistsName+'_lock'):
+                dist = json.loads(redisCache.get(newOppBoardDistsName))
+                dist[newFen] = dict(normalize(newOppBoardDist, adjust=True))
+                redisCache.set(newOppBoardDistsName, json.dumps(dist))
+            # newOppBoardDists[newFen] = normalize(newOppBoardDist, adjust=True)
     def opp_move_result_update(self, capturedMyPiece, captureSquare, maxTime):
         self._check_invariants()
         #Calculate impossible boards
@@ -127,12 +137,15 @@ class BeliefState:
         
         self._check_invariants()
         
-        newMyBoardDist = defaultdict(float)
+        newMyBoardDist = dict()
         newOppBoardDists = dict()
         mbd = self.myBoardDist
         for chunk in chunks(list(sorted(self.myBoardDist.keys(), key=self.myBoardDist.get, reverse=True))):
-            run_parallel(self.opp_move_result_update_helper, list((fen, min(1.5, maxTime*mbd[fen]), mbd[fen], newMyBoardDist, self.oppBoardDists[fen], newOppBoardDists, capturedMyPiece, captureSquare) for fen in chunk))
-            # gevent.joinall([gevent.spawn(self.opp_move_result_update_helper, fen, min(1.5, maxTime*mbd[fen]), mbd[fen], newMyBoardDist, self.oppBoardDists[fen], newOppBoardDists, capturedMyPiece, captureSquare) for fen in chunk])
+            redisCache.set('nmbd', json.dumps(newMyBoardDist))
+            redisCache.set('nobd', json.dumps(newOppBoardDists))
+            run_parallel(self.opp_move_result_update_helper, list((fen, min(1.5, maxTime*mbd[fen]), mbd[fen], 'nmbd', self.oppBoardDists[fen], 'nobd', capturedMyPiece, captureSquare) for fen in chunk))
+            newMyBoardDist = json.loads(redisCache.get('nmbd'))
+            newOppBoardDists = json.loads(redisCache.get('nobd'))
         # for fen, boardProb in self.myBoardDist.items():
         #     ##TODO: Make boards where they could have taken our king (and knew it) much more unlikely
         #     # self.opp_move_result_update_helper(fen, min(1.5, (maxTime*.5)/len(self.myBoardDist) + (maxTime*.5)*boardProb), boardProb, newMyBoardDist, self.oppBoardDists[fen], newOppBoardDists, capturedMyPiece, captureSquare)

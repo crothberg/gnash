@@ -1,7 +1,10 @@
 from multiprocessing import Pool
 # from multiprocessing.dummy import Pool
+import redis
 
-POOL_SIZE = 100#mp.cpu_count()-1
+redisCache = redis.Redis(host='localhost', port=6379, db=0)
+
+POOL_SIZE = 10#mp.cpu_count()-1
 
 def chunks(lst, chunkSize=POOL_SIZE):
     for i in range(0, len(lst), chunkSize):
