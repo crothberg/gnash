@@ -70,9 +70,10 @@ def get_move_dist_helper_2(testMoves, sampleFen, sampleFenProb, legalMoveScores,
         # input()
         return
     if len(legalTestMoves) > 0:
+        wasInCheck = chess.Board(sampleFen).is_check()
         for move in legalTestMoves:
             boardCopy = chess.Board(sampleFen)
-            isCapture = capture_square_of_move(boardCopy, move) != None
+            isCapture = real_capture_square_of_move(boardCopy, move) != None
             boardCopy.push(move)
             boardCopy.clear_stack()
             try:
@@ -81,7 +82,7 @@ def get_move_dist_helper_2(testMoves, sampleFen, sampleFenProb, legalMoveScores,
                 print(f"failed in primary analysis with board {sampleFen}, and move {move}, returning...")
                 return
             gambleAmount = gambleFactor * .5
-            if not actuallyUs and not isCapture:
+            if not actuallyUs and not isCapture and not wasInCheck:
                 boardCopy.turn = not boardCopy.turn
                 boardCopy.ep_square = None
                 try:
@@ -91,7 +92,7 @@ def get_move_dist_helper_2(testMoves, sampleFen, sampleFenProb, legalMoveScores,
                 # print(f"Primary score for move {move} on board {sampleFen}: {primaryScore}")
                 # print(f"Secondary score for move {move} on board {sampleFen}: {secondaryScore}")
                 baseScores[move] = (1-gambleAmount)*primaryScore + (gambleAmount)*secondaryScore
-            elif actuallyUs and not isCapture:
+            elif actuallyUs and not isCapture and not wasInCheck:
                 boardCopy.turn = not boardCopy.turn
                 boardCopy.ep_square = None
                 try:
@@ -207,17 +208,12 @@ def get_move_dist(boardDist, maxTime, actuallyUs, gambleFactor, movesToConsider 
     count = 0
     lastIterTime = 0
     while (time.time() - startTime) < (maxTime - lastIterTime):
-        # print(time.time()-startTime, maxTime - lastIterTime)
         iterStartTime = time.time()
         sampleFen = choose_1_board(fenCounts, boardDist)
-        # print(f"Sampled board {sampleFen}")
         if totalTriesSoFar == 0:
             testMoves = list(set(get_all_moves(chess.Board(sampleFen))).intersection(legalMoveScores))
         else:
             testMoves = choose_n_moves(legalMoveScores, 5, 1, totalTriesSoFar, sampleFen)
-            # time.sleep(.05)
-            # if stockfishMove not in testMoves:
-            #     testMoves += [stockfishMove]
         get_move_dist_helper_2(testMoves, sampleFen, boardDist[sampleFen], legalMoveScores, actuallyUs, gambleFactor)
         # allChunks = chunks(testMoves, NUM_ENGINES)
         # for moves in allChunks:
@@ -226,36 +222,32 @@ def get_move_dist(boardDist, maxTime, actuallyUs, gambleFactor, movesToConsider 
             # if len(list(allChunks))>1:
             #     time.sleep(.1)
         totalTriesSoFar += len(testMoves)
-        # if count == 1: print(f"First iter took {time.time() - iterStartTime} seconds with maxTime {maxTime}")
         count += 1
         if count>1: lastIterTime = time.time() - iterStartTime
-        # print(lastIterTime if count>1 else time.time()-iterStartTime)
-    # print(f"Did {count} iterations in getMoveDist with {maxTime} seconds")
-    # print(totalTriesSoFar, totalTriesSoFar/(time.time()-startTime), time.time()-startTime)
-    # print("Raw scores:")
-    # print(legalMoveScores)
-    # t = time.time()
-    # probs = normalize({move: legalMoveScores[move][1]**8 for move in legalMoves}, adjust=True)
-    probs = normalize({move: legalMoveScores[move][1] for move in legalMoves}, adjust=True, raiseNum=5, giveToZeros=.005)
+    # probs = normalize({move: legalMoveScores[move][1] for move in legalMoves}, adjust=True, raiseNum=5, giveToZeros=.005)
+    probs = normalize({move: legalMoveScores[move][1] for move in legalMoves}, adjust=True, raiseNum=4, giveToZeros=.005)
     
-    # bestMove = max(probs, key=probs.get)
-    # bestMoveScore = probs[bestMove]
-    # topMoves = {bestMove}
-    # #If all top moves are the same score (e.g. because they're all lost)
-    # # use the stockfish method
-    # for move in sorted(probs, key=probs.get, reverse=True):
-    #     if abs(bestMoveScore - probs[move]) < .001: #< .05:
-    #         topMoves.add(move)
-    #     else:
-    #         break
-    # if len(topMoves) > 1:
-    #     print("Breaking tie by using stockfish with the following moves:")
-    #     print(list((move, legalMoveScores[move], probs[move]) for move in topMoves))
-    #     probs = get_quick_move_dist(boardDist, maxTime=min(1.0, maxTime/2), movesToConsider = topMoves, actuallyUs=True)
-    #     for move in legalMoves:
-    #         if move not in probs:
-    #             probs[move] = 0
-    #     normalize(probs)
+    #if actually us, enter a tie-breaking process if necessary
+    if actuallyUs:
+        bestMove = max(probs, key=probs.get)
+        bestMoveScore = probs[bestMove]
+        topMoves = {bestMove}
+        #If all top moves are the same score (e.g. because they're all lost)
+        # use the stockfish method
+        for move in sorted(probs, key=probs.get, reverse=True):
+            if abs(bestMoveScore - probs[move]) <.0000001: #< .05:
+                topMoves.add(move)
+            else:
+                break
+        if len(topMoves) > 1:
+            print("Breaking tie by using stockfish with the following moves:")
+            print(list((move, legalMoveScores[move], probs[move]) for move in topMoves))
+            probs = get_quick_move_dist(boardDist, maxTime=min(1.0, maxTime/2), movesToConsider = topMoves, actuallyUs=True)
+            for move in legalMoves:
+                if move not in probs:
+                    probs[move] = 0
+            normalize(probs)
+
     return probs
 
 def get_quick_move_dist(boardDist, maxTime, movesToConsider = None, actuallyUs = False):

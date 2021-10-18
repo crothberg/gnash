@@ -1,3 +1,4 @@
+from utils.engine_utils import quit_on_exceptions
 from utils.util import *
 import chess
 from reconchess import *
@@ -24,7 +25,7 @@ class HelperBot():
         if not os.path.exists(self.stockfish_path):
             raise ValueError('No stockfish executable found at "{}"'.format(self.stockfish_path))
         
-
+    @quit_on_exceptions
     def handle_game_start(self, color: Color, board: chess.Board, opponent_name: str):
         self.color = color
         self.board = board
@@ -36,6 +37,7 @@ class HelperBot():
         self.searchSquares = [52,50,54,49] if self.color else [12,10,14,9]
         self.searched = 0
 
+    @quit_on_exceptions
     def handle_opponent_move_result(self, captured_my_piece: bool, capture_square: Optional[Square]):
         # if the opponent captured our piece, remove it from our board.
         self.my_piece_captured_square = capture_square
@@ -45,7 +47,7 @@ class HelperBot():
         boardCopy.turn = not self.color
         allOppMoves = get_all_moves(boardCopy)
         for move in allOppMoves:
-            if capture_square_of_move(boardCopy, move) != capture_square:
+            if real_capture_square_of_move(boardCopy, move) != capture_square:
                 continue
             revisedMove = revise_move(boardCopy, move) if move != chess.Move.null() else chess.Move.null()
             revisedMove = revisedMove or chess.Move.null()
@@ -55,7 +57,7 @@ class HelperBot():
                 return
             boardCopy.pop()
             
-
+    @quit_on_exceptions
     def choose_sense(self, sense_actions: List[Square], move_actions: List[chess.Move], seconds_left: float) -> \
             Optional[Square]:
         print(f"Choosing sense with board: {self.board.fen()}")
@@ -90,6 +92,7 @@ class HelperBot():
         #         sense_actions.remove(square)
         return random.choice(senseActions)
 
+    @quit_on_exceptions
     def handle_sense_result(self, sense_result: List[Tuple[Square, Optional[chess.Piece]]]):
         # add the pieces in the sense result to our board
         for square, piece in sense_result:
@@ -117,7 +120,7 @@ class HelperBot():
             self.searched = 0
         # enemy_king_square = oppKingSquares[0]
 
-
+    @quit_on_exceptions
     def choose_move(self, move_actions: List[chess.Move], seconds_left: float) -> Optional[chess.Move]:
         print(self.board.fen())
         # if we might be able to take the king, try to
@@ -144,6 +147,7 @@ class HelperBot():
         # if all else fails, pass
         return None
 
+    @quit_on_exceptions
     def handle_move_result(self, requested_move: Optional[chess.Move], taken_move: Optional[chess.Move],
                            captured_opponent_piece: bool, capture_square: Optional[Square]):
         # if a move was executed, apply it to our board

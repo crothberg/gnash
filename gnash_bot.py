@@ -49,7 +49,9 @@ class GnashBot(Player):
         now = datetime.datetime.now()
         gameTimeStr = f"{now.date()}_{now.hour}_{now.minute}_{now.second}"
         if not self.isTest and opponent_name not in {"moveFinder", "senseFinder"}:
-            sys.stdout = open(f"gameLogs/{opponent_name}_{gameTimeStr}.txt","w")
+            outFile = open(f"gameLogs/{opponent_name}_{gameTimeStr}.txt","w")
+            sys.stdout = outFile
+            sys.stderr = outFile
 
         if not self.useService:
             self.stash = Stash(self.color)
@@ -65,16 +67,16 @@ class GnashBot(Player):
         self.set_gear(0)
         profiles = {
             #us and them
-            "oracle": (.08, .04), # Not terrible, but could probably be improved
+            "oracle": (.2, 0.001), #meh.
             "random": (1.0, None),
             "RandomBot": (1.0, None),
             "attacker": (.3, .3), #seems to work
             "AttackBot": (.3, .3), #seems to work
             "penumbra": (.02, .85), #feel somewhat solid on this
-            "Fianchetto": (.02, .35), # literally no idea
-            "StrangeFish2": (.3, .1), # needs tuning
-            "trout": (.5, .15), #This one is solid
-            "TroutBot": (.5, .15), #This one is solid
+            "Fianchetto": (.02, .6), # literally no idea
+            "StrangeFish2": (.2, 0.001), # needs tuning
+            "trout": (.3, .1), #This one is solid
+            "TroutBot": (.3, .1), #This one is solid
         }
         gUs, gThem = profiles[self.opponent_name] if self.opponent_name in profiles else (None, None)
         gUs = gUs or .03
@@ -159,13 +161,24 @@ class GnashBot(Player):
         print("Sending new history completed.")
 
     @quit_on_exceptions
-    def get_new_boards(self):
+    def get_new_boards(self, urgent=True):
         extraTime = (self.gameEndTime - time.time()) - self.useHelperBotTime
         if not self.useService:
-            print("Requesting new boards...")
+            print(f"Requesting new boards (urgent = {urgent})...")
+            originalNumBoards = len(self.beliefState.myBoardDist)
             t0 = time.time()
-            self.stash.add_possible_boards(self.beliefState, self.maxInDist, timeRemaining=extraTime)
-            print(f"Received {len(self.beliefState.myBoardDist)} boards after {time.time()-t0} seconds.")
+            rescueBoard = self.stash.add_possible_boards(self.beliefState, self.maxInDist, urgent=urgent, timeRemaining=extraTime)
+            if rescueBoard != None:
+                self.useHelperBot = True
+                helperBotBoard = chess.Board(rescueBoard)
+                print(f"Helper bot invoked with board {helperBotBoard.fen()}")
+                self.helperBot.handle_game_start(self.color, helperBotBoard, self.opponent_name)
+            if urgent: print(f"Received {len(self.beliefState.myBoardDist)} boards after {time.time()-t0} seconds.")
+            else:
+                if len(self.beliefState.myBoardDist) > originalNumBoards:
+                    print(f"Received {len(self.beliefState.myBoardDist) - originalNumBoards} supplementary boards in just {time.time()-t0} seconds.")
+                else:
+                    print("Didn't find anything new in the stash...")
             return
         print("Sending request for new boards...") 
         result = requests.post(f"{self.baseurl}/get-possible-boards/{self.gameId}", json={"numBoards":self.maxInDist, "extraTime":extraTime}).json()
@@ -204,6 +217,7 @@ class GnashBot(Player):
             self.beliefState.opp_move_result_update(captured_my_piece, capture_square, maxTime=self.handleOppMoveMaxTime)
         except EmptyBoardDist:
             self.get_new_boards()
+        self.get_new_boards(urgent=False)
         self.beliefState._check_invariants()
         print(f"Handled opponent move result in {time.time() - t0} seconds.")
 
@@ -241,14 +255,16 @@ class GnashBot(Player):
             self.beliefState.sense_update(sense_result, maxTime = self.handleSenseMaxTime)
         except EmptyBoardDist:
             self.get_new_boards()
+        self.get_new_boards(urgent=False)
         # print('Our updated belief dist is now as follows:')
-        if self.useService:
-            self.beliefState.display()
-        if not self.useService:
-            self.beliefState.display(self.stash)
-        bestKey = max(self.beliefState.myBoardDist, key=self.beliefState.myBoardDist.get)
-        print(bestKey, self.beliefState.myBoardDist[bestKey])
-        print(f"Handled sense result in {time.time()-t0} seconds.")
+        if not self.useHelperBot:
+            if self.useService:
+                self.beliefState.display()
+            if not self.useService:
+                self.beliefState.display(self.stash)
+            bestKey = max(self.beliefState.myBoardDist, key=self.beliefState.myBoardDist.get)
+            print(bestKey, self.beliefState.myBoardDist[bestKey])
+            print(f"Handled sense result in {time.time()-t0} seconds.")
 
     @quit_on_exceptions
     def choose_move(self, move_actions: List[chess.Move], seconds_left: float) -> Optional[chess.Move]:
@@ -290,6 +306,7 @@ class GnashBot(Player):
                 return
         except EmptyBoardDist:
             self.get_new_boards()
+        self.get_new_boards(urgent=False)
         print(f"Handled our move result in {time.time()-t0} seconds.")
         
         t1 = time.time()
@@ -305,12 +322,12 @@ class GnashBot(Player):
         if (game_history != None): game_history.save('games/game.json')
         if self.useService:
             requests.post(f"{self.baseurl}/game-over/{self.gameId}")
+        else:
+            self.stash.end_background_processor()
         print(f"{'We' if winner_color == self.color else f'They ({self.opponent_name})'} beat {'us' if winner_color != self.color else self.opponent_name} by {win_reason}!")
-        engines.shut_down()
+        engines.shut_down_engines()
         if self.useHelperBot:
             try:
                 self.helperBot.engine.quit()
             except:
                 pass
-        if not self.useService:
-            self.stash.end_background_processor()

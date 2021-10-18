@@ -1,7 +1,7 @@
 import os
 import traceback
 import chess.engine
-import time, random
+import sys
 
 os.environ['STOCKFISH_EXECUTABLE'] = os.path.dirname(os.path.realpath(__file__)) + '/../stockfish/stockfish_14_x64_avx2.exe'
 STOCKFISH_ENV_VAR = 'STOCKFISH_EXECUTABLE'
@@ -25,13 +25,13 @@ class EngineGroup:
         new_engine = chess.engine.SimpleEngine.popen_uci(stockfish_path, setpgrp=True)
         engineId = EngineGroup.nextId
         EngineGroup.nextId += 1
-        print(f'Added new engine {engineId}', flush=True)
+        # print(f'Added new engine {engineId}', flush=True)
         EngineGroup.engines[engineId] = new_engine
         EngineGroup.availableEngines.add(engineId)
     def get_available_engine():
         if len(EngineGroup.availableEngines) == 0:
             EngineGroup.add_engine()
-            print(f'Engine list is now {EngineGroup.engines}', flush=True)
+            # print(f'Engine list is now {EngineGroup.engines}', flush=True)
         engineId = EngineGroup.availableEngines.pop()
         return EngineGroup.engines[engineId], engineId
     def release_engine(engineId):
@@ -43,7 +43,7 @@ class EngineGroup:
             del EngineGroup.engines[engineId]
             EngineGroup.availableEngines.remove(engineId)
 
-def shut_down():
+def shut_down_engines():
     print('Shutting down all engines...')
     EngineGroup.shut_down()
 
@@ -69,10 +69,15 @@ def analyse(board, maxTime):
 def quit_on_exceptions(func):
     def inner_function(*args, **kwargs):
         try:
+            sys.stdout.flush()
+            sys.stderr.flush()
             return func(*args, **kwargs)
         except Exception as e:
             print(traceback.format_exc())
-            shut_down()
+            shut_down_engines()
             raise Exception(e)
+        finally:
+            sys.stdout.flush()
+            sys.stderr.flush()
 
     return inner_function

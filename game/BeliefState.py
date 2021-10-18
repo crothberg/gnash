@@ -20,7 +20,7 @@ class BeliefState:
 
         self.moveSelector = moveSelector or MoveSelector(actuallyUs=True, gambleFactor=.1, timePerMove=5)
         self.oppMoveSelector = oppMoveSelector or MoveSelector(actuallyUs=False, gambleFactor=.3, timePerMove=None)
-        self.believedMoveSelector = MoveSelector(actuallyUs=True, gambleFactor=.3, timePerMove=None)
+        self.believedMoveSelector = MoveSelector(actuallyUs=True, gambleFactor=.15, timePerMove=None)
 
     def sense_update_helper(fen, senseResult, impossibleBoards):
         board = chess.Board(fen)
@@ -66,8 +66,8 @@ class BeliefState:
             board = chess.Board(fen)
             revisedMove = revise_move(board, move) if move != chess.Move.null() else chess.Move.null()
             revisedMove = revisedMove or chess.Move.null()
-            if ((capturedMyPiece and captureSquare != capture_square_of_move(board, revisedMove))
-                or (not capturedMyPiece and capture_square_of_move(board, revisedMove) != None)):
+            if ((capturedMyPiece and captureSquare != real_capture_square_of_move(board, revisedMove))
+                or (not capturedMyPiece and real_capture_square_of_move(board, revisedMove) != None)):
                     continue
             board.push(revisedMove)
             board.halfmove_clock = 0
@@ -86,8 +86,8 @@ class BeliefState:
                     revisedMove = revisedMove or chess.Move.null()
                     if revisedMove != revisedMoveOnRealBoard:
                         continue
-                    if ((capturedMyPiece and captureSquare != capture_square_of_move(board2, revisedMove))
-                        or (not capturedMyPiece and capture_square_of_move(board2, revisedMove) != None)):
+                    if ((capturedMyPiece and captureSquare != real_capture_square_of_move(board2, revisedMove))
+                        or (not capturedMyPiece and real_capture_square_of_move(board2, revisedMove) != None)):
                             continue
                     board2.push(revisedMove)
                     board2.halfmove_clock = 0
@@ -105,7 +105,7 @@ class BeliefState:
             if capturedMyPiece:
                 possible = False
                 for move in get_pseudo_legal_moves({board.fen()}):
-                    if capture_square_of_move(board, move) == captureSquare:
+                    if real_capture_square_of_move(board, move) == captureSquare:
                         possible = True
                 if not possible:
                     impossibleBoards.add(board.fen())
@@ -165,7 +165,7 @@ class BeliefState:
             board = chess.Board(fen)
             pseudoLegalMoves = get_pseudo_legal_moves({fen})
             pseudoLegalMoves.add(None)
-            if ((capture_square_of_move(board, takenMove) != captureSquare)
+            if ((real_capture_square_of_move(board, takenMove) != captureSquare)
                 or (requestedMove != takenMove and requestedMove in pseudoLegalMoves)
                 or (takenMove not in pseudoLegalMoves)):
                 impossibleBoards.add(board.fen())
@@ -199,7 +199,7 @@ class BeliefState:
                 board = chess.Board(fen)
                 pseudoLegalMoves = get_pseudo_legal_moves({fen})
                 pseudoLegalMoves.add(None)
-                if ((capture_square_of_move(board, takenMove) != captureSquare)
+                if ((real_capture_square_of_move(board, takenMove) != captureSquare)
                     or (requestedMove != takenMove and requestedMove in pseudoLegalMoves)
                     or (takenMove not in pseudoLegalMoves)):
                     impossibleBoards.add(board.fen())
@@ -233,7 +233,7 @@ class BeliefState:
                         board2 = chess.Board(fen)
                         revisedMove = revise_move(board2, move) if move != chess.Move.null() else chess.Move.null()
                         revisedMove = revisedMove or chess.Move.null()
-                        if (capture_square_of_move(board2, revisedMove) != captureSquare):
+                        if (real_capture_square_of_move(board2, revisedMove) != captureSquare):
                             continue
                         board2.push(revisedMove)
                         board2.halfmove_clock = 0

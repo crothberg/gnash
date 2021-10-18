@@ -33,7 +33,8 @@ def select_sense(boardDist: BoardDist, actuallyUs = False) -> SenseMove:
             if actuallyUs: print("Best sensing move given checkProb:", bestSenseMove)
             return bestSenseMove
         if (
-            (inCheckProb > .6 and sum([1 if checkerSquares[s]>.2 else 0 for s in checkerSquares])>1)
+            (sum([1 if checkerSquares[s]>.18 else 0 for s in checkerSquares])>1)
+            # (inCheckProb > .6 and sum([1 if checkerSquares[s]>.2 else 0 for s in checkerSquares])>1)
             or (inCheckProb >= .75 and not (len(checkerSquares) == 1 and inCheckProb == 1))
             ):
             bestSenseMove = None

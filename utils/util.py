@@ -117,7 +117,7 @@ def get_all_moves(board : chess.Board):
     return move_actions(board) + [chess.Move.null()]
 
 def king_capture_moves(board : chess.Board):
-    return {move for move in board.pseudo_legal_moves if capture_square_of_move(board, move) == board.king(not board.turn)}
+    return {move for move in board.pseudo_legal_moves if real_capture_square_of_move(board, move) == board.king(not board.turn)}
 
 def into_check_moves(board : chess.Board):
     intoCheckMoves = set()
@@ -194,7 +194,7 @@ def get_threaten_mate_moves_dist(dist):
         for move in set(legalMoves).intersection(set(allMoves)):
             revisedMove = revise_move(board, move) if move != chess.Move.null() else chess.Move.null()
             revisedMove = revisedMove or chess.Move.null()
-            if capture_square_of_move(board, revisedMove) != None:
+            if real_capture_square_of_move(board, revisedMove) != None:
                 continue
             board.push(revisedMove)
             #if we (now opp because it's their turn) threaten checkmate...
@@ -230,7 +230,7 @@ def get_silent_check_and_queenCheck_moves(board : chess.Board):
     for move in get_all_moves(board):
         revisedMove = revise_move(board, move) if move != chess.Move.null() else chess.Move.null()
         revisedMove = revisedMove or chess.Move.null()
-        if capture_square_of_move(board, revisedMove) != None:
+        if real_capture_square_of_move(board, revisedMove) != None:
             continue
         queenLocs = board.pieces(chess.QUEEN, not board.turn)
         board.push(revisedMove)
@@ -261,7 +261,7 @@ def get_check_and_queenCheck_moves_dist(dist):
         for move in set(legalMoves).intersection(set(allMoves)):
             revisedMove = revise_move(board, move) if move != chess.Move.null() else chess.Move.null()
             revisedMove = revisedMove or chess.Move.null()
-            if capture_square_of_move(board, revisedMove) != None:
+            if real_capture_square_of_move(board, revisedMove) != None:
                 continue
             queenLocs = board.pieces(chess.QUEEN, not board.turn)
             board.push(revisedMove)
@@ -292,7 +292,7 @@ def get_silent_check_and_queenCheck_moves_dist(dist):
         for move in set(legalMoves).intersection(set(allMoves)):
             revisedMove = revise_move(board, move) if move != chess.Move.null() else chess.Move.null()
             revisedMove = revisedMove or chess.Move.null()
-            if capture_square_of_move(board, revisedMove) != None:
+            if real_capture_square_of_move(board, revisedMove) != None:
                 continue
             queenLocs = board.pieces(chess.QUEEN, not board.turn)
             board.push(revisedMove)
@@ -333,3 +333,14 @@ def percent_in_check(boardDist):
         for checker in checkers:
             checkerSquares[checker] += prob
     return percent, checkerSquares
+
+def real_capture_square_of_move(board: chess.Board, move: Optional[chess.Move]) -> Optional[Square]:
+    capture_square = None
+    if move is not None and board.is_capture(move) and move in get_pseudo_legal_moves({board.fen()}):
+        if board.is_en_passant(move):
+            # taken from :func:`chess.Board.push()`
+            down = -8 if board.turn == chess.WHITE else 8
+            capture_square = board.ep_square + down
+        else:
+            capture_square = move.to_square
+    return capture_square

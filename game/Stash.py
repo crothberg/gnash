@@ -168,7 +168,7 @@ class Stash:
     Note: adds in boards with prob 0
     '''
     def add_possible_boards(self, beliefState : BeliefState, numBoards : int, urgent = True, timeRemaining = None):
-        assert len(self) > 0, "No boards remaining in stash!"
+        assert len(self) > 0 or urgent == False, "No boards remaining in stash!"
         if urgent: assert timeRemaining != None
 
         self.lock.acquire()

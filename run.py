@@ -17,8 +17,8 @@ def main():
 
     # white = GnashBot(isTest=True)
     # white = RandomBot()
-    white = AttackerBot()
-    # white = TroutBot()
+    # white = AttackerBot()
+    white = TroutBot()
     black = GnashBot(isTest=True)
 
     # opponent.handle_game_start(chess.WHITE, game.board.copy(), 'Trout')
