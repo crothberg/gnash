@@ -64,15 +64,18 @@ class GnashBot(Player):
         self.gameEndTime = time.time() + 900
 
         self.set_gear(0)
-        gUs, gThem = get_gamble_factor(self.opponent_name)
-        self.moveSelector = MoveSelector(actuallyUs=True, gambleFactor=gUs, timePerMove=self.chooseMoveMaxTime)
-        oppMoveSelector = MoveSelector(actuallyUs=False, gambleFactor=gThem, timePerMove=None)
+        gUs, gThem, giveFrivChecks = get_gamble_factor(self.opponent_name)
+        self.moveSelector = MoveSelector(actuallyUs=True, gambleFactor=gUs, timePerMove=self.chooseMoveMaxTime, giveFrivolousChecks=giveFrivChecks)
+        oppMoveSelector = MoveSelector(actuallyUs=False, gambleFactor=gThem, timePerMove=None, giveFrivolousChecks=True)
 
         self.beliefState = BeliefState(color, board.fen(), self.moveSelector, oppMoveSelector)
 
         print("Our gamble factor:", gUs)
         print("Opponent's gamble factor:", gThem)
-        print("Not doing frivolous checks")
+        if giveFrivChecks:
+            print("Giving frivolous checks this game.")
+        else:
+            print("Not giving frivolous checks this game.")
 
         if opponent_name in {"random", "RandomBot"}:
             self.set_gear(4 if not self.isTest else 0)

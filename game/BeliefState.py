@@ -1,4 +1,5 @@
 import threading
+from strategy.profiles import *
 from game.MoveSelector import MoveSelector
 from collections import defaultdict
 from strategy.select_sense import select_sense
@@ -20,9 +21,9 @@ class BeliefState:
 
         self.catchingUp = False
 
-        self.moveSelector = moveSelector or MoveSelector(actuallyUs=True, gambleFactor=.1, timePerMove=5)
-        self.oppMoveSelector = oppMoveSelector or MoveSelector(actuallyUs=False, gambleFactor=.3, timePerMove=None)
-        self.believedMoveSelector = MoveSelector(actuallyUs=False, gambleFactor=.15, timePerMove=None)
+        self.moveSelector = moveSelector or MoveSelector(actuallyUs=True, gambleFactor=.1, timePerMove=5, giveFrivolousChecks=False)
+        self.oppMoveSelector = oppMoveSelector or MoveSelector(actuallyUs=False, gambleFactor=.3, timePerMove=None, giveFrivolousChecks=True)
+        self.believedMoveSelector = MoveSelector(actuallyUs=False, gambleFactor=defaultBelievedOurGambleFactor, timePerMove=None, giveFrivolousChecks=True)
 
     def sense_update_helper(fen, senseResult, impossibleBoards):
         board = chess.Board(fen)

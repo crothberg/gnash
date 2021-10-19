@@ -4,11 +4,12 @@ import utils.engine_utils as engines
 import strategy.select_move as strategy
 
 class MoveSelector:
-    def __init__(self, actuallyUs, gambleFactor, timePerMove):
+    def __init__(self, actuallyUs, gambleFactor, timePerMove, giveFrivolousChecks):
         assert 0 <= gambleFactor <= 2
         self.actuallyUs = actuallyUs
         self.gambleFactor = gambleFactor
         self.timePerMove = timePerMove
+        self.giveFrivolousChecks = giveFrivolousChecks
     
     def select_move(self, beliefState):
         assert self.actuallyUs
@@ -39,4 +40,4 @@ class MoveSelector:
         return sample(choices)
 
     def get_move_dist(self, boardDist, maxTime : float, movesToConsider=None):
-        return strategy.get_move_dist(boardDist, maxTime, self.actuallyUs, self.gambleFactor, movesToConsider)
+        return strategy.get_move_dist(boardDist, maxTime, self.actuallyUs, self.gambleFactor, self.giveFrivolousChecks, movesToConsider)

@@ -1,4 +1,4 @@
-chess==1.6.1
-Flask==2.0.2
 requests==2.26.0
 reconchess==1.6.8
+Flask==2.0.2
+chess==1.6.1

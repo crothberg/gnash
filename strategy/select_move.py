@@ -9,7 +9,7 @@ import time
 from statistics import *
 import threading
 
-def get_move_dist_helper_2(testMoves, sampleFen, sampleFenProb, legalMoveScores, actuallyUs, gambleFactor, movesSeenOnBoard):
+def get_move_dist_helper_2(testMoves, sampleFen, sampleFenProb, legalMoveScores, actuallyUs, gambleFactor, movesSeenOnBoard, giveFrivChecks):
     sampleBoard = chess.Board(sampleFen)
     sampleBoard.clear_stack()
     sampleBoard.halfmove_clock = 0
@@ -82,7 +82,7 @@ def get_move_dist_helper_2(testMoves, sampleFen, sampleFenProb, legalMoveScores,
                 return
             gambleAmount = gambleFactor * .5
             if not isCapture and not wasInCheck and gambleAmount > 0:
-                if boardCopy.is_check() and actuallyUs:
+                if boardCopy.is_check() and not giveFrivChecks:
                     gambleAmount = .001
                 boardCopy.turn = not boardCopy.turn
                 boardCopy.ep_square = None
@@ -162,7 +162,7 @@ def get_move_dist_helper_2(testMoves, sampleFen, sampleFenProb, legalMoveScores,
             for board in movesSeenOnBoard:
                 movesSeenOnBoard[board].add(move)
         
-def get_move_dist(boardDist, maxTime, actuallyUs, gambleFactor, movesToConsider = None):
+def get_move_dist(boardDist, maxTime, actuallyUs, gambleFactor, giveFrivChecks, movesToConsider = None):
     # print(f"Getting move dist with time {maxTime}")
     # t = time.time()
     legalMoves = set(get_pseudo_legal_moves(boardDist))
@@ -223,7 +223,7 @@ def get_move_dist(boardDist, maxTime, actuallyUs, gambleFactor, movesToConsider 
         #     testMoves = list(set(get_all_moves(chess.Board(sampleFen))).intersection(legalMoveScores))
         # else:
         #     testMoves = choose_n_moves(legalMoveScores, 5, 1, totalTriesSoFar, sampleFen)
-        get_move_dist_helper_2(testMoves, sampleFen, boardDist[sampleFen], legalMoveScores, actuallyUs, gambleFactor, movesSeenOnBoard)
+        get_move_dist_helper_2(testMoves, sampleFen, boardDist[sampleFen], legalMoveScores, actuallyUs, gambleFactor, movesSeenOnBoard, giveFrivChecks)
         count += 1
         if count>1: lastIterTime = time.time() - iterStartTime
     # print(legalMoveScores)
