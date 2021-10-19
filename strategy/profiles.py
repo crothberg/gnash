@@ -9,7 +9,7 @@ profiles = {
     "attacker": (.1, None),
     "AttackBot": (.1, None),
     "penumbra": (.7, .85),
-    "Fianchetto": (.8, .1),
+    "Fianchetto": (.8, .1), #wins some loses some, hopefully good enough
     "StrangeFish2": (.7, 0), #wins some loses some, good enough for now
     "trout": (1, 0), #this is solid.
     "TroutBot": (None, None),

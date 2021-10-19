@@ -107,6 +107,7 @@ def get_move_dist_helper_2(testMoves, sampleFen, sampleFenProb, legalMoveScores,
         assert len(legalTestMoves) <= len(baseScores) <= len(legalTestMoves) + 1 + len(psuedoLegalOnly)
     standardDev = stdev(baseScores.values()) if len(baseScores) >= 2 else 1
     for move, score in baseScores.items():
+        sampleBoard = chess.Board(sampleFen)
         sampleBoard.push(move)
         # #Minor penalty for taking a piece (and revealing information)
         # if isCapture and actuallyUs:
@@ -122,8 +123,11 @@ def get_move_dist_helper_2(testMoves, sampleFen, sampleFenProb, legalMoveScores,
         if actuallyUs and (2 <= chess.square_rank(sampleBoard.king(not sampleBoard.turn)) <= 5):
             score = max(0, score - 2*standardDev)
         #Massive penalty for moving/leaving king in check on any board
-        if sampleBoard.attackers(sampleBoard.turn, sampleBoard.king(not sampleBoard.turn)):
-            score = -1
+        try:
+            if sampleBoard.attackers(sampleBoard.turn, sampleBoard.king(not sampleBoard.turn)):
+                score = -1
+        except:
+            return ##TODO: Deal with this bug at some point... why are they looking at a board where they don't have a king?
         sampleBoard.pop()
         baseScores[move] = score
 
