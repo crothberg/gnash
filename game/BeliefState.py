@@ -262,7 +262,7 @@ class BeliefState:
         self._condense_opp_board_dists()
         self._check_invariants()
 
-    def _condense_opp_board_dists(self, maxBoards=400):
+    def _condense_opp_board_dists(self, maxBoards=500):
         self._check_invariants()
         if sum([len(dist) for dist in self.oppBoardDists.values()]) > maxBoards:
             newOppBoardDists = dict()

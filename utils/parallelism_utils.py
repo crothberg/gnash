@@ -1,6 +1,6 @@
 # #Uncomment for multiprocessing
 from multiprocessing import Pool as MpPool, cpu_count
-# MP_POOL_SIZE = cpu_count()-1
+# MP_POOL_SIZE = cpu_count()
 
 #Uncomment for threading
 from multiprocessing.dummy import Pool as ThreadPool

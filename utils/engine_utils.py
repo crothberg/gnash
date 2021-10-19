@@ -40,7 +40,9 @@ class EngineGroup:
         EngineGroup.lock.release()
         return EngineGroup.engines[engineId], engineId
     def release_engine(engineId):
+        EngineGroup.lock.acquire()
         EngineGroup.availableEngines.add(engineId)
+        EngineGroup.lock.release()
     def shut_down():
         engine_list = list(EngineGroup.engines.keys())
         for engineId in engine_list:

@@ -10,8 +10,9 @@ from game.BeliefState import BeliefState
 from strategy.select_move import get_move_dist
 
 tests = [
+    "take_queen.txt",
     # "adjacent_kings.txt",
-    "take_rook.txt",
+    # "take_rook.txt",
     # "take_knight.txt",
     # "test.txt",
     # "test2.txt",
@@ -42,6 +43,7 @@ for testFilePath in tests:
     gnash = GnashBot()
     gnash.handle_game_start(color, chess.Board(), 'moveFinder')
     gnash.beliefState = BeliefState(gnash.color)
+    gnash.moveSelector.gambleFactor = .7
     gnash.beliefState.myBoardDist = board_dist
     gnash.beliefState.oppBoardDists = {fen: {fen : 1.0} for fen in gnash.beliefState.myBoardDist}
     move = gnash.choose_move([], 500)

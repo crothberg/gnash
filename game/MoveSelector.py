@@ -12,20 +12,20 @@ class MoveSelector:
     
     def select_move(self, beliefState):
         assert self.actuallyUs
-        topFen = list(beliefState.myBoardDist.keys())[0]
-        board = chess.Board(topFen)
-        if beliefState.myBoardDist[topFen] > .75:
-            enemy_king_square = board.king(not board.turn)
-            if enemy_king_square:
-                # if there are any ally pieces that can take king, execute one of those moves
-                enemy_king_attackers = board.attackers(board.turn, enemy_king_square)
-                if enemy_king_attackers:
-                    attacker_square = enemy_king_attackers.pop()
-                    return chess.Move(attacker_square, enemy_king_square)
-            move = engines.play(board, min(self.timePerMove, 1.0)).move
-            if move != None and move.promotion != None and move.promotion != chess.KNIGHT:
-                move.promotion = chess.QUEEN
-            return move
+        # topFen = list(beliefState.myBoardDist.keys())[0]
+        # board = chess.Board(topFen)
+        # if beliefState.myBoardDist[topFen] > .75:
+        #     enemy_king_square = board.king(not board.turn)
+        #     if enemy_king_square:
+        #         # if there are any ally pieces that can take king, execute one of those moves
+        #         enemy_king_attackers = board.attackers(board.turn, enemy_king_square)
+        #         if enemy_king_attackers:
+        #             attacker_square = enemy_king_attackers.pop()
+        #             return chess.Move(attacker_square, enemy_king_square)
+        #     move = engines.play(board, min(self.timePerMove, 1.0)).move
+        #     if move != None and move.promotion != None and move.promotion != chess.KNIGHT:
+        #         move.promotion = chess.QUEEN
+        #     return move
         moveDist = self.get_move_dist(beliefState.myBoardDist, maxTime=self.timePerMove)
         # print(moveDist)
         topMoves = sorted(moveDist, key=moveDist.get, reverse=True)[:5]
