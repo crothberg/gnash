@@ -17,13 +17,13 @@ profiles = {
     "trout": (1, 0), #this is solid.
     "TroutBot": (1, 0),
     "TimoBertram": (.1, 0),
+    "Kevin": (0, 1),
     "default": (.1, 1)
 }
 
 onlyGivesCheckBots = {
-    "attacker",
-    "AttackBot",
-    "DynamicEntropy"
+    "DynamicEntropy",
+    "theAgent"
 }
 
 giveFrivChecksTo = {
