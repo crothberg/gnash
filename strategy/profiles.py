@@ -1,5 +1,3 @@
-from os import name
-
 profiles = {
     #us and them
     "Oracle": (1, 0),
