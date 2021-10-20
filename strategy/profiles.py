@@ -17,7 +17,7 @@ profiles = {
     "trout": (1, 0), #this is solid.
     "TroutBot": (1, 0),
     "TimoBertram": (.1, 0),
-    "Kevin": (0, 1.3),
+    "Kevin": (1, 1.3),
     "default": (.1, 1)
 }
 
