@@ -13,12 +13,13 @@ profiles = {
     # "StrangeFish2": (.5, 0), #experimental (0/1)
     # "StrangeFish2": (0, 0),#experimental (0/1) (but didn't seem terrible)
     # "StrangeFish2": (.5, 1), #experimental (fail?)
-    # "StrangeFish2": (0.01, 1), #has a win at least but not clear how many
-    "StrangeFish2": (1, 1), #best bet so far (but pretty untested)
+    "StrangeFish2": (0.01, 1), #has a win at least but not clear how many, turn off experimental if using
+    # "StrangeFish2": (1, 1), #best bet so far (but pretty untested)
     "trout": (1, 0), #this is solid.
     "TroutBot": (1, 0),
     "TimoBertram": (.1, 0),
-    "Kevin": (1, 1.3),
+    # "Kevin": (1, 1.3), #nothing is working against Kevin!
+    "Kevin": (0, 0),
     "Marmot": (.5, .1),
     "default": (.1, 1)
 }
@@ -37,7 +38,8 @@ giveFrivChecksTo = {
     "TimoBertram",
     "random",
     "RandomBot",
-    "Kevin"
+    "Kevin",
+    # "StrangeFish2" #only should be on when using (1,1) and experimental
 }
 
 defaultBelievedOurGambleFactor = .25
