@@ -82,6 +82,9 @@ class GnashBot(Player):
         else:
             self.set_gear(0)
 
+        if opponent_name in {"attacker", "AttackBot"}:
+            self.useHelperBotTime = 350
+
     @quit_on_exceptions
     def handle_opponent_move_result(self, captured_my_piece: bool, capture_square: Optional[Square]):
         if self.useHelperBot:self.helperBot.handle_opponent_move_result(captured_my_piece, capture_square); return
