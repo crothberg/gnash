@@ -68,9 +68,9 @@ class GnashBot(Player):
         self.moveSelector = MoveSelector(actuallyUs=True, gambleFactor=gUs, timePerMove=self.chooseMoveMaxTime, giveFrivolousChecks=giveFrivChecks, onlyGiveChecks=False)
         oppMoveSelector = MoveSelector(actuallyUs=False, gambleFactor=gThem, timePerMove=None, giveFrivolousChecks=True, onlyGiveChecks=onlyGivesCheck)
 
-        if self.opponent_name in {"Fianchetto", "Kevin",}: #"StrangeFish2", "TroutBot"}:
-            self.moveSelector.experimental = True
-            oppMoveSelector.experimental = False
+        # if self.opponent_name in {"Fianchetto", "Kevin",}: #"StrangeFish2", "TroutBot"}:
+        #     self.moveSelector.experimental = True
+        #     oppMoveSelector.experimental = False
 
         self.beliefState = BeliefState(color, board.fen(), self.moveSelector, oppMoveSelector)
 
