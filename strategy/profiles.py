@@ -7,15 +7,12 @@ profiles = {
     "RandomBot": (1.0, None),
     "attacker": (.1, 1),
     "AttackBot": (.1, 1),
-    "penumbra": (.7, .85),
-    # "Fianchetto": (.8, .1), #wins some loses some, hopefully good enough
-    # "Fianchetto": (.8, .5), #experimental - not so good
-    # "Fianchetto": (1, 1), #experimental
-    "Fianchetto": (0, 0), #experimental (1/0)
+    "penumbra": (.7, 1),
+    "Fianchetto": (0, 0), #looks really good!
     # "StrangeFish2": (.7, 0), #wins some loses some, good enough for the tournament
-    # "StrangeFish2": (.5, 0), #experimental - (0/1)
-    # "StrangeFish2": (0, 0),#experimental - (0/1)
-    "StrangeFish2": (1, 1), #experimental
+    "StrangeFish2": (.5, 0), #experimental
+    # "StrangeFish2": (0, 0),#experimental (0/1)
+    # "StrangeFish2": (1, 1), #experimental: wins sometimes
     "trout": (1, 0), #this is solid.
     "TroutBot": (None, None),
     "default": (.1, 1)

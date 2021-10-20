@@ -35,7 +35,7 @@ class GnashBot(Player):
         self.isTest = isTest
         self.helperBot = HelperBot()
         self.useHelperBot = False
-        self.useHelperBotTime = 120
+        self.useHelperBotTime = 90
         self.turn = 0
         self.useLocal = True
         self.useService = False

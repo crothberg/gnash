@@ -28,6 +28,7 @@ class HelperBot():
 
     @quit_on_exceptions
     def handle_opponent_move_result(self, captured_my_piece: bool, capture_square: Optional[Square]):
+        ##TODO: Improve removal of opponent's pieces that we sensed have moved
         self.board.turn = not self.color
         # if the opponent captured our piece, remove it from our board.
         self.my_piece_captured_square = capture_square
@@ -84,6 +85,7 @@ class HelperBot():
 
     @quit_on_exceptions
     def handle_sense_result(self, sense_result: List[Tuple[Square, Optional[chess.Piece]]]):
+        ##TODO: Improve removal of opponent's pieces that we sensed have moved
         # add the pieces in the sense result to our board
         for square, piece in sense_result:
             self.board.set_piece_at(square, piece)
