@@ -4,13 +4,14 @@ import utils.engine_utils as engines
 import strategy.select_move as strategy
 
 class MoveSelector:
-    def __init__(self, actuallyUs, gambleFactor, timePerMove, giveFrivolousChecks, onlyGiveChecks):
+    def __init__(self, actuallyUs, gambleFactor, timePerMove, giveFrivolousChecks, onlyGiveChecks, experimental=False):
         assert 0 <= gambleFactor <= 2
         self.actuallyUs = actuallyUs
         self.gambleFactor = gambleFactor
         self.timePerMove = timePerMove
         self.giveFrivolousChecks = giveFrivolousChecks
         self.onlyGiveChecks = onlyGiveChecks
+        self.experimental = experimental
         if self.onlyGiveChecks: assert self.giveFrivolousChecks
     
     def select_move(self, beliefState):
@@ -25,7 +26,7 @@ class MoveSelector:
         #         if enemy_king_attackers:
         #             attacker_square = enemy_king_attackers.pop()
         #             return chess.Move(attacker_square, enemy_king_square)
-        #     move = engines.play(board, min(self.timePerMove, 1.0)).move
+        #     move = engines.play(board, min(self.timePerMove, 1.0))
         #     if move != None and move.promotion != None and move.promotion != chess.KNIGHT:
         #         move.promotion = chess.QUEEN
         #     return move
@@ -43,4 +44,4 @@ class MoveSelector:
         # return sample(choices)
 
     def get_move_dist(self, boardDist, maxTime : float, movesToConsider=None):
-        return strategy.get_move_dist(boardDist, maxTime, self.actuallyUs, self.gambleFactor, self.giveFrivolousChecks, self.onlyGiveChecks, movesToConsider)
+        return strategy.get_move_dist(boardDist, maxTime, self.actuallyUs, self.gambleFactor, self.giveFrivolousChecks, self.onlyGiveChecks, self.experimental, movesToConsider)

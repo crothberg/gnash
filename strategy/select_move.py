@@ -9,7 +9,7 @@ import time
 from statistics import *
 import threading
 
-def get_move_dist_helper_2(testMoves, sampleFen, sampleFenProb, legalMoveScores, actuallyUs, gambleFactor, movesSeenOnBoard, giveFrivChecks, onlyGiveChecks):
+def get_move_dist_helper_2(testMoves, sampleFen, sampleFenProb, legalMoveScores, actuallyUs, gambleFactor, movesSeenOnBoard, giveFrivChecks, onlyGiveChecks, experimental=False):
     sampleBoard = chess.Board(sampleFen)
     sampleBoard.clear_stack()
     sampleBoard.halfmove_clock = 0
@@ -70,6 +70,10 @@ def get_move_dist_helper_2(testMoves, sampleFen, sampleFenProb, legalMoveScores,
         return
     if len(legalTestMoves) > 0:
         wasInCheck = chess.Board(sampleFen).is_check()
+        if experimental:
+            ifTheirTurnBoard = chess.Board(sampleFen)
+            ifTheirTurnBoard.turn = not ifTheirTurnBoard.turn
+            theirNextMove = engines.play(ifTheirTurnBoard, maxTime=.1)
         for move in legalTestMoves:
             boardCopy = chess.Board(sampleFen)
             isCapture = real_capture_square_of_move(boardCopy, move) != None
@@ -88,15 +92,26 @@ def get_move_dist_helper_2(testMoves, sampleFen, sampleFenProb, legalMoveScores,
                 if (not boardCopy.is_check() and onlyGiveChecks):
                     baseScores[move] = primaryScore
                     continue
-                boardCopy.turn = not boardCopy.turn
+                if experimental:
+                    try:
+                        revisedMove = revise_move(boardCopy, theirNextMove) if theirNextMove != chess.Move.null() else chess.Move.null()
+                        revisedMove = revisedMove or chess.Move.null()
+                        boardCopy.push(revisedMove)
+                    except:
+                        baseScores[move] = primaryScore
+                        continue
+                if not experimental:
+                    boardCopy.turn = not boardCopy.turn
                 boardCopy.ep_square = None
                 boardCopy.clear_stack()
                 try:
                     secondaryScore = scorer.score(boardCopy, .01, boardCopy.turn)
                 except:
                     print(f"failed in secondary analysis with board {boardCopy.fen()}, after move {move}, returning...")
-                # print(f"Primary score for move {move} on board {sampleFen}: {primaryScore}")
-                # print(f"Secondary score for move {move} on board {sampleFen}: {secondaryScore}")
+                # if experimental:
+                #     print(f"Primary score for move {move} on board {sampleFen}: {primaryScore}")
+                #     print(f"Assumed they wanted move {theirNextMove} and took move {revisedMove}")
+                #     print(f"Secondary score for move {move} on new board {boardCopy.fen()}: {secondaryScore}")
                 baseScores[move] = (1-gambleAmount)*primaryScore + (gambleAmount)*secondaryScore
             else:
                 baseScores[move] = primaryScore                    
@@ -170,7 +185,7 @@ def get_move_dist_helper_2(testMoves, sampleFen, sampleFenProb, legalMoveScores,
             for board in movesSeenOnBoard:
                 movesSeenOnBoard[board].add(move)
         
-def get_move_dist(boardDist, maxTime, actuallyUs, gambleFactor, giveFrivChecks, onlyGiveChecks, movesToConsider = None):
+def get_move_dist(boardDist, maxTime, actuallyUs, gambleFactor, giveFrivChecks, onlyGiveChecks, experimental, movesToConsider = None):
     # print(f"Getting move dist with time {maxTime}")
     # t = time.time()
     legalMoves = set(get_pseudo_legal_moves(boardDist))
@@ -234,7 +249,7 @@ def get_move_dist(boardDist, maxTime, actuallyUs, gambleFactor, giveFrivChecks, 
         #     testMoves = list(set(get_all_moves(chess.Board(sampleFen))).intersection(legalMoveScores))
         # else:
         #     testMoves = choose_n_moves(legalMoveScores, 5, 1, totalTriesSoFar, sampleFen)
-        get_move_dist_helper_2(testMoves, sampleFen, boardDist[sampleFen], legalMoveScores, actuallyUs, gambleFactor, movesSeenOnBoard, giveFrivChecks, onlyGiveChecks)
+        get_move_dist_helper_2(testMoves, sampleFen, boardDist[sampleFen], legalMoveScores, actuallyUs, gambleFactor, movesSeenOnBoard, giveFrivChecks, onlyGiveChecks, experimental=experimental)
         count += 1
         if count>1: lastIterTime = time.time() - iterStartTime
     # print(legalMoveScores)
@@ -344,7 +359,7 @@ def get_stockfish_move(fen : str, maxTime, movesToConsider=None, actuallyUs=Fals
     move = None
     if movesToConsider != None:
         try:
-            move = engines.play(board, maxTime, movesToConsider).move
+            move = engines.play(board, maxTime, movesToConsider)
         except Exception as e:
             print(e)
             print(f"ERROR GETTING MOVE FOR BOARD {board.fen()}")
@@ -352,7 +367,7 @@ def get_stockfish_move(fen : str, maxTime, movesToConsider=None, actuallyUs=Fals
             print(f"MovesToConsider: {movesToConsider}")
     else:
         try:
-            move = engines.play(board, maxTime).move
+            move = engines.play(board, maxTime)
         except Exception as e:
             print(e)
             print(f"ERROR GETTING MOVE FOR BOARD {board.fen()}")

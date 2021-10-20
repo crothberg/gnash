@@ -165,8 +165,8 @@ class HelperBot():
         try:
             self.board.turn = self.color
             self.board.clear_stack()
-            result = engines.play(self.board, .3)
-            return result.move
+            move = engines.play(self.board, .3)
+            return move
         except chess.engine.EngineTerminatedError:
             print('Stockfish Engine died')
         except chess.engine.EngineError:

@@ -4,6 +4,7 @@ import traceback
 import chess.engine
 import sys
 import utils.parallelism_utils as parallel
+import chess
 
 os.environ['STOCKFISH_EXECUTABLE'] = os.path.dirname(os.path.realpath(__file__)) + '/../stockfish/stockfish_14_x64_avx2.exe'
 STOCKFISH_ENV_VAR = 'STOCKFISH_EXECUTABLE'
@@ -52,18 +53,25 @@ class EngineGroup:
 
 def shut_down_engines():
     print('Shutting down all engines...')
-    EngineGroup.shut_down()
+    try:
+        EngineGroup.shut_down()
+    except:
+        pass
 
-def play(board, maxTime, movesToConsider=None):
+def play(board : chess.Board, maxTime, movesToConsider=None):
     # print('Starting play...')
     engine, engineId = EngineGroup.get_available_engine()
+    enemyKingAttackers = board.attackers(board.turn, board.king(not board.turn))
+    if enemyKingAttackers:
+        attacker_square = enemyKingAttackers.pop()
+        return chess.Move(attacker_square, board.king(not board.turn))
     if movesToConsider != None:
         play = engine.play(board, chess.engine.Limit(maxTime), root_moves=movesToConsider)
     else:
         play = engine.play(board, chess.engine.Limit(maxTime))
     EngineGroup.release_engine(engineId)
     # print('Play complete!')
-    return play
+    return play.move
     
 def analyse(board, maxTime):
     # print('Starting analysis...', flush=True)

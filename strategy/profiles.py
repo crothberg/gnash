@@ -1,19 +1,20 @@
 profiles = {
     #us and them
-    "Oracle": (1, 0),
+    "Oracle": (.25, 0),
     "random": (1.0, None),
     "RandomBot": (1.0, None),
     "attacker": (.1, 1),
     "AttackBot": (.1, 1),
-    "penumbra": (0, 1),
-    "Fianchetto": (0, 0), #best bet so far
+    "penumbra": (.1, 1),
+    # "Fianchetto": (0, 0), #best bet so far
+    "Fianchetto": (.3, 0), #experimental
     # "Fianchetto": (.5, 0), #experimental (just okay)
     # "StrangeFish2": (.5, .5), #experimental
     # "StrangeFish2": (.5, 0), #experimental (0/1)
     # "StrangeFish2": (0, 0),#experimental (0/1) (but didn't seem terrible)
     # "StrangeFish2": (.5, 1), #experimental (fail?)
-    "StrangeFish2": (0.01, 1),
-    # "StrangeFish2": (1, 1), #best bet so far (but pretty untested)
+    # "StrangeFish2": (0.01, 1),
+    "StrangeFish2": (1, 1), #best bet so far (but pretty untested)
     "trout": (1, 0), #this is solid.
     "TroutBot": (1, 0),
     "TimoBertram": (.1, 0),
