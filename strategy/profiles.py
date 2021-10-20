@@ -1,20 +1,30 @@
 from os import name
 
-
 profiles = {
     #us and them
-    "oracle": (.1, .1), #this seems to be very solid
+    "Oracle": (1, 0),
     "random": (1.0, None),
     "RandomBot": (1.0, None),
     "attacker": (.1, 1),
     "AttackBot": (.1, 1),
     "penumbra": (.7, .85),
     # "Fianchetto": (.8, .1), #wins some loses some, hopefully good enough
-    "Fianchetto": (.8, .5), #experimental
-    "StrangeFish2": (.7, 0), #wins some loses some, good enough for now
+    # "Fianchetto": (.8, .5), #experimental - not so good
+    # "Fianchetto": (1, 1), #experimental
+    "Fianchetto": (0, 0), #experimental (1/0)
+    # "StrangeFish2": (.7, 0), #wins some loses some, good enough for the tournament
+    # "StrangeFish2": (.5, 0), #experimental - (0/1)
+    # "StrangeFish2": (0, 0),#experimental - (0/1)
+    "StrangeFish2": (1, 1), #experimental
     "trout": (1, 0), #this is solid.
     "TroutBot": (None, None),
     "default": (.1, 1)
+}
+
+onlyGivesCheckBots = {
+    "attacker",
+    "AttackBot",
+    "DynamicEntropy"
 }
 
 giveFrivChecksTo = {
@@ -36,4 +46,5 @@ def get_gamble_factor(name):
     if gThem is None:
         gThem = profiles["default"][1]
     giveFrivChecks = name in giveFrivChecksTo
-    return gUs, gThem, giveFrivChecks
+    onlyGivesChecks = name in onlyGivesCheckBots
+    return gUs, gThem, giveFrivChecks, onlyGivesChecks

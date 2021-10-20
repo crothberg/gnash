@@ -9,7 +9,7 @@ import time
 from statistics import *
 import threading
 
-def get_move_dist_helper_2(testMoves, sampleFen, sampleFenProb, legalMoveScores, actuallyUs, gambleFactor, movesSeenOnBoard, giveFrivChecks):
+def get_move_dist_helper_2(testMoves, sampleFen, sampleFenProb, legalMoveScores, actuallyUs, gambleFactor, movesSeenOnBoard, giveFrivChecks, onlyGiveChecks):
     sampleBoard = chess.Board(sampleFen)
     sampleBoard.clear_stack()
     sampleBoard.halfmove_clock = 0
@@ -83,7 +83,11 @@ def get_move_dist_helper_2(testMoves, sampleFen, sampleFenProb, legalMoveScores,
             gambleAmount = gambleFactor * .5
             if not isCapture and not wasInCheck and gambleAmount > 0:
                 if boardCopy.is_check() and not giveFrivChecks:
-                    gambleAmount = .001
+                    baseScores[move] = primaryScore
+                    continue
+                if (not boardCopy.is_check() and onlyGiveChecks):
+                    baseScores[move] = primaryScore
+                    continue
                 boardCopy.turn = not boardCopy.turn
                 boardCopy.ep_square = None
                 boardCopy.clear_stack()
@@ -157,7 +161,7 @@ def get_move_dist_helper_2(testMoves, sampleFen, sampleFenProb, legalMoveScores,
             continue
         movesSeenOnBoard[sampleFen].add(move)
         if score >= 0:
-            if legalMoveScores[move] == 100:
+            if legalMoveScores[move] > 1:
                 legalMoveScores[move] = score * (sampleFenProb**3)
             else:
                 legalMoveScores[move] += score * (sampleFenProb**3)
@@ -166,7 +170,7 @@ def get_move_dist_helper_2(testMoves, sampleFen, sampleFenProb, legalMoveScores,
             for board in movesSeenOnBoard:
                 movesSeenOnBoard[board].add(move)
         
-def get_move_dist(boardDist, maxTime, actuallyUs, gambleFactor, giveFrivChecks, movesToConsider = None):
+def get_move_dist(boardDist, maxTime, actuallyUs, gambleFactor, giveFrivChecks, onlyGiveChecks, movesToConsider = None):
     # print(f"Getting move dist with time {maxTime}")
     # t = time.time()
     legalMoves = set(get_pseudo_legal_moves(boardDist))
@@ -177,46 +181,49 @@ def get_move_dist(boardDist, maxTime, actuallyUs, gambleFactor, giveFrivChecks, 
     if maxTime <= .5:
         return get_quick_move_dist(boardDist, maxTime, movesToConsider = movesToConsider, actuallyUs=actuallyUs)
     legalMoveScores = {move: 100 for move in legalMoves}
+    legalMovesOnBoards = dict()
+    allMovesOnBoards = dict()
+    for board in boardDist:
+        allMovesOnBoards[board] = set(get_all_moves(chess.Board(board)))
+        legalMovesOnBoards[board] = get_pseudo_legal_moves({board})
+        for move in legalMovesOnBoards[board]:
+            legalMoveScores[move] += boardDist[board]
     movesSeenOnBoard = {board: set() for board in boardDist}
     def getMovePlayLikelihoods():
         likelihoods = {}
         for move in legalMoveScores:
-            totalSeen = sum([boardDist[board]**3 for board in boardDist if move in get_all_moves(chess.Board(board)) and move in movesSeenOnBoard[board]])
+            totalSeen = sum([boardDist[board]**3 for board in boardDist if move in allMovesOnBoards[board] and move in movesSeenOnBoard[board]])
             likelihoods[move] = (legalMoveScores[move]/totalSeen) if totalSeen > 0 else 0
         return normalize(likelihoods, adjust=True, giveToZeros=.01, raiseNum=4)
     def getMoveExploreLikelihoods():
         likelihoods = {}
         for move in legalMoveScores:
-            totalSeen = sum([boardDist[board]**3 for board in boardDist if move in get_all_moves(chess.Board(board)) and move in movesSeenOnBoard[board]])
-            likelihoods[move] = (legalMoveScores[move]/totalSeen) if totalSeen > 0 else 100
+            totalSeen = sum([boardDist[board]**3 for board in boardDist if move in allMovesOnBoards[board] and move in movesSeenOnBoard[board]])
+            likelihoods[move] = (legalMoveScores[move]/totalSeen) if totalSeen > 0 else legalMoveScores[move]
         return normalize(likelihoods, adjust=True, giveToZeros=.01)
     def nextBoardAndMoves(n=20):
         moveLikelihoods = getMoveExploreLikelihoods()
-        # print(legalMoveScores)
-        # print(moveLikelihoods)
         boardExploreScores = {board: 0 for board in boardDist}
         for fen in boardDist:
             percentUnexplored = 0
-            b = chess.Board(fen)
-            allMoves = set(get_all_moves(b)).intersection(legalMoves)
+            allMoves = allMovesOnBoards[fen].intersection(legalMoves)
             for move in allMoves:
                 if move not in movesSeenOnBoard[fen]: percentUnexplored += moveLikelihoods[move]
             boardExploreScores[fen] = percentUnexplored*boardDist[fen]
         fenToExplore = max(boardExploreScores, key=boardExploreScores.get)
         if boardExploreScores[fenToExplore] < 0.0000001:
             return None, None, True
-        moves = sorted(moveLikelihoods, key=lambda move: -1 if (move in movesSeenOnBoard[fenToExplore] or move not in get_all_moves(chess.Board(fenToExplore))) else moveLikelihoods[move], reverse=True)
-        moves = list(move for move in list(moves)[:n] if (move not in movesSeenOnBoard[fenToExplore] and move in get_all_moves(chess.Board(fenToExplore))))
-        # print(fenToExplore)
-        # print(moves)
-        # input()
+        moves = sorted(moveLikelihoods, key=lambda move: -1 if (move in movesSeenOnBoard[fenToExplore] or move not in allMovesOnBoards[fenToExplore]) else moveLikelihoods[move], reverse=True)
+        moves = list(move for move in list(moves)[:n] if (move not in movesSeenOnBoard[fenToExplore] and move in allMovesOnBoards[fenToExplore]))
         return fenToExplore, moves, False
 
     startTime = time.time()
     count = 0
     lastIterTime = 0
-    while (time.time() - startTime) < (maxTime - lastIterTime) or max(legalMoveScores.values())>1:
-        # print(max(legalMoveScores.values()))
+    mostLikelyBoardLikelihood = max(boardDist.values())
+    topBoards = set(board for board in boardDist if boardDist[board] >= mostLikelyBoardLikelihood-.1)
+    topBoardMoves = get_pseudo_legal_moves(topBoards)
+    while (time.time() - startTime) < (maxTime - lastIterTime) or max([legalMoveScores[move] for move in topBoardMoves])>1:
         iterStartTime = time.time()
         sampleFen, testMoves, terminate = nextBoardAndMoves()
         if terminate:
@@ -227,7 +234,7 @@ def get_move_dist(boardDist, maxTime, actuallyUs, gambleFactor, giveFrivChecks, 
         #     testMoves = list(set(get_all_moves(chess.Board(sampleFen))).intersection(legalMoveScores))
         # else:
         #     testMoves = choose_n_moves(legalMoveScores, 5, 1, totalTriesSoFar, sampleFen)
-        get_move_dist_helper_2(testMoves, sampleFen, boardDist[sampleFen], legalMoveScores, actuallyUs, gambleFactor, movesSeenOnBoard, giveFrivChecks)
+        get_move_dist_helper_2(testMoves, sampleFen, boardDist[sampleFen], legalMoveScores, actuallyUs, gambleFactor, movesSeenOnBoard, giveFrivChecks, onlyGiveChecks)
         count += 1
         if count>1: lastIterTime = time.time() - iterStartTime
     # print(legalMoveScores)

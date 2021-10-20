@@ -28,6 +28,7 @@ class HelperBot():
 
     @quit_on_exceptions
     def handle_opponent_move_result(self, captured_my_piece: bool, capture_square: Optional[Square]):
+        self.board.turn = not self.color
         # if the opponent captured our piece, remove it from our board.
         self.my_piece_captured_square = capture_square
         if captured_my_piece:
@@ -111,6 +112,7 @@ class HelperBot():
 
     @quit_on_exceptions
     def choose_move(self, move_actions: List[chess.Move], seconds_left: float) -> Optional[chess.Move]:
+        self.board.turn = self.color
         print(self.board.fen())
         # if we might be able to take the king, try to
         if self.kingSquare:
@@ -139,6 +141,8 @@ class HelperBot():
     @quit_on_exceptions
     def handle_move_result(self, requested_move: Optional[chess.Move], taken_move: Optional[chess.Move],
                            captured_opponent_piece: bool, capture_square: Optional[Square]):
+        self.board.turn = self.color
         # if a move was executed, apply it to our board
         if taken_move is not None:
             self.board.push(taken_move)
+        self.board.turn = not self.color

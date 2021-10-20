@@ -64,9 +64,9 @@ class GnashBot(Player):
         self.gameEndTime = time.time() + 900
 
         self.set_gear(0)
-        gUs, gThem, giveFrivChecks = get_gamble_factor(self.opponent_name)
-        self.moveSelector = MoveSelector(actuallyUs=True, gambleFactor=gUs, timePerMove=self.chooseMoveMaxTime, giveFrivolousChecks=giveFrivChecks)
-        oppMoveSelector = MoveSelector(actuallyUs=False, gambleFactor=gThem, timePerMove=None, giveFrivolousChecks=True)
+        gUs, gThem, giveFrivChecks, onlyGivesCheck = get_gamble_factor(self.opponent_name)
+        self.moveSelector = MoveSelector(actuallyUs=True, gambleFactor=gUs, timePerMove=self.chooseMoveMaxTime, giveFrivolousChecks=giveFrivChecks, onlyGiveChecks=False)
+        oppMoveSelector = MoveSelector(actuallyUs=False, gambleFactor=gThem, timePerMove=None, giveFrivolousChecks=True, onlyGiveChecks=onlyGivesCheck)
 
         self.beliefState = BeliefState(color, board.fen(), self.moveSelector, oppMoveSelector)
 

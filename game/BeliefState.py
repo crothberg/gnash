@@ -21,9 +21,9 @@ class BeliefState:
 
         self.catchingUp = False
 
-        self.moveSelector = moveSelector or MoveSelector(actuallyUs=True, gambleFactor=.1, timePerMove=5, giveFrivolousChecks=False)
-        self.oppMoveSelector = oppMoveSelector or MoveSelector(actuallyUs=False, gambleFactor=.3, timePerMove=None, giveFrivolousChecks=True)
-        self.believedMoveSelector = MoveSelector(actuallyUs=False, gambleFactor=defaultBelievedOurGambleFactor, timePerMove=None, giveFrivolousChecks=True)
+        self.moveSelector = moveSelector or MoveSelector(actuallyUs=True, gambleFactor=.1, timePerMove=5, giveFrivolousChecks=False, onlyGiveChecks=False)
+        self.oppMoveSelector = oppMoveSelector or MoveSelector(actuallyUs=False, gambleFactor=.3, timePerMove=None, giveFrivolousChecks=True, onlyGiveChecks=True)
+        self.believedMoveSelector = MoveSelector(actuallyUs=False, gambleFactor=defaultBelievedOurGambleFactor, timePerMove=None, giveFrivolousChecks=True, onlyGiveChecks=True)
 
     def sense_update_helper(fen, senseResult, impossibleBoards):
         board = chess.Board(fen)

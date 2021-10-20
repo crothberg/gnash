@@ -4,6 +4,7 @@ from helper_bot import HelperBot
 from utils.util import *
 from utils.history_utils import *
 import threading
+import sys
 
 class Stash:
     def __init__(self, color):
@@ -38,6 +39,9 @@ class Stash:
             assert acquired
             self.improve_stash(maxAtATime=40, background=True)
             self.lock.release()
+            if random.random() < .05:
+                sys.stdout.flush()
+                sys.stderr.flush()
             time.sleep(.15)
 
     def start_background_processor(self):
