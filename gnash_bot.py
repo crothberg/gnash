@@ -77,7 +77,7 @@ class GnashBot(Player):
         else:
             print("Not giving frivolous checks this game.")
 
-        if opponent_name in {"random", "RandomBot"}:
+        if opponent_name in {"random", "RandomBot", "URChIn"}:
             self.set_gear(4 if not self.isTest else 0)
         else:
             self.set_gear(0)
