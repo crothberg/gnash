@@ -6,15 +6,15 @@ profiles = {
     "oracle": (.1, .1), #this seems to be very solid
     "random": (1.0, None),
     "RandomBot": (1.0, None),
-    "attacker": (.1, None),
-    "AttackBot": (.1, None),
+    "attacker": (.1, 1),
+    "AttackBot": (.1, 1),
     "penumbra": (.7, .85),
     # "Fianchetto": (.8, .1), #wins some loses some, hopefully good enough
     "Fianchetto": (.8, .5), #experimental
     "StrangeFish2": (.7, 0), #wins some loses some, good enough for now
     "trout": (1, 0), #this is solid.
     "TroutBot": (None, None),
-    "default": (.7, .5)
+    "default": (.1, 1)
 }
 
 giveFrivChecksTo = {
