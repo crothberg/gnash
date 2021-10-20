@@ -123,6 +123,11 @@ class GnashBot(Player):
         if self.useHelperBot:
             return self.helperBot.choose_sense(sense_actions, move_actions, seconds_left)
         print('\nSensing now...')
+        if self.opponent_name in {"attacker", "AttackBot"}:
+            if self.turn in {2,3} and not self.color:
+                return 44
+            if self.turn in {3,4} and self.color:
+                return 12
         sense_move = select_sense(self.beliefState.myBoardDist, actuallyUs=True)
         print('\nSensing move is', sense_move)
         print(f"Chose a sensing action in {time.time()-t0} seconds.")

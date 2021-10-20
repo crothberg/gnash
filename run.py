@@ -11,11 +11,11 @@ def main():
 
     game = LocalGame(SECONDS_PER_PLAYER)
 
-    # white = GnashBot(isTest=True)
+    white = GnashBot(isTest=True)
     # white = RandomBot()
-    white = AttackerBot()
+    black = AttackerBot()
     # white = TroutBot()
-    black = GnashBot(isTest=True)
+    # black = GnashBot(isTest=True)
 
     # opponent.handle_game_start(chess.WHITE, game.board.copy(), 'Trout')
     # gnash.handle_game_start(chess.BLACK, game.board.copy(), 'Gnash')

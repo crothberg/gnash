@@ -10,9 +10,10 @@ profiles = {
     "penumbra": (.7, 1),
     "Fianchetto": (0, 0), #best bet so far
     # "Fianchetto": (.5, 0), #experimental (just okay)
-    "StrangeFish2": (.5, .5), #experimental
+    # "StrangeFish2": (.5, .5), #experimental
     # "StrangeFish2": (.5, 0), #experimental (0/1)
     # "StrangeFish2": (0, 0),#experimental (0/1) (but didn't seem terrible)
+    "StrangeFish2": (.5, 1),
     # "StrangeFish2": (1, 1), #best bet so far
     "trout": (1, 0), #this is solid.
     "TroutBot": (1, 0),
