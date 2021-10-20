@@ -8,15 +8,14 @@ profiles = {
     "attacker": (.1, 1),
     "AttackBot": (.1, 1),
     "penumbra": (.7, 1),
-    # "Fianchetto": (0, 0), #looks really good!
-    "Fianchetto": (.5,0), #experimental
-    # "StrangeFish2": (.7, 0), #wins some loses some, good enough for the tournament
+    "Fianchetto": (0, 0), #best bet so far
+    # "Fianchetto": (.5, 0), #experimental (just okay)
     "StrangeFish2": (.5, .5), #experimental
     # "StrangeFish2": (.5, 0), #experimental (0/1)
     # "StrangeFish2": (0, 0),#experimental (0/1) (but didn't seem terrible)
-    # "StrangeFish2": (1, 1), #experimental: wins sometimes
+    # "StrangeFish2": (1, 1), #best bet so far
     "trout": (1, 0), #this is solid.
-    "TroutBot": (None, None),
+    "TroutBot": (1, 0),
     "default": (.1, 1)
 }
 
