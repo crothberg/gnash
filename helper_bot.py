@@ -15,6 +15,8 @@ class HelperBot():
         self.board = None
         self.color = None
         self.my_piece_captured_square = None
+        self.requestedMove = None
+        self.takenMove = None
         
     @quit_on_exceptions
     def handle_game_start(self, color: Color, board: chess.Board, opponent_name: str):
@@ -38,10 +40,10 @@ class HelperBot():
         boardCopy.turn = not self.color
         allOppMoves = get_all_moves(boardCopy)
         for move in allOppMoves:
-            if real_capture_square_of_move(boardCopy, move) != capture_square:
-                continue
             revisedMove = revise_move(boardCopy, move) if move != chess.Move.null() else chess.Move.null()
             revisedMove = revisedMove or chess.Move.null()
+            if real_capture_square_of_move(boardCopy, revisedMove) != capture_square:
+                continue
             boardCopy.push(revisedMove)
             if boardCopy.is_check():
                 self.board.set_piece_at(revisedMove.to_square, self.board.piece_at(move.from_square))
@@ -51,42 +53,72 @@ class HelperBot():
     @quit_on_exceptions
     def choose_sense(self, sense_actions: List[Square], move_actions: List[chess.Move], seconds_left: float) -> \
             Optional[Square]:
-        print(f"Choosing sense with board: {self.board.fen()}")
-        senseActions = list(filter(lambda x: any(self.lastKingSquare in get_sense_squares(y) for y in get_sense_squares(x)), GOOD_SENSING_SQUARES))
+        if self.board.king(not self.color) == None:
+            sense = random.choice(self.searchSquares)
+            print(f"No king on board {self.board.fen()}, chose sense {sense}")
+            return sense
+        senseActions = GOOD_SENSING_SQUARES[:]
+        # print(f"Choosing sense with board: {self.board.fen()}")
+        # senseActions = list(filter(lambda x: any(self.lastKingSquare in get_sense_squares(y) for y in get_sense_squares(x)), GOOD_SENSING_SQUARES))
         
-        if self.kingSquare == None:
-            if self.searched < len(self.searchSquares):
-                search = self.searchSquares[self.searched]
-                self.searched += 1
-                return search
-            if self.searched == len(self.searchSquares):
-                self.searched += 1
-                return self.lastKingSquare
-        checkers = self.board.attackers(not self.color, self.board.king(self.color))
-        if len(checkers) > 0:
-            senseActions = list(filter(lambda x: any(checkSquare in get_sense_squares(x) for checkSquare in checkers), GOOD_SENSING_SQUARES))
-            return random.choice(senseActions)
+        # if self.kingSquare == None:
+        #     if self.searched < len(self.searchSquares):
+        #         search = self.searchSquares[self.searched]
+        #         self.searched += 1
+        #         return search
+        #     if self.searched == len(self.searchSquares):
+        #         self.searched += 1
+        #         return self.lastKingSquare
+        # checkers = self.board.attackers(not self.color, self.board.king(self.color))
+        # if len(checkers) > 0:
+        #     senseActions = list(filter(lambda x: any(checkSquare in get_sense_squares(x) for checkSquare in checkers), GOOD_SENSING_SQUARES))
+        #     return random.choice(senseActions)
 
         # if our piece was just captured, sense where it was captured
         if self.my_piece_captured_square:
-            return self.my_piece_captured_square
+            if self.my_piece_captured_square in GOOD_SENSING_SQUARES:
+                return self.my_piece_captured_square
+            senseActions = list(filter(lambda x: self.my_piece_captured_square in get_sense_squares(x), GOOD_SENSING_SQUARES))
+            return random.choice(senseActions)
 
+        if self.takenMove != self.requestedMove and self.takenMove == None:
+            senseActions = list(filter(lambda x: self.requestedMove.to_square in get_sense_squares(x), GOOD_SENSING_SQUARES))
+            return random.choice(senseActions)
         # if we might capture a piece when we move, sense where the capture will occur
         future_move = self.choose_move(move_actions, seconds_left)
         if future_move is not None and self.board.piece_at(future_move.to_square) is not None:
-            return future_move.to_square
+            senseActions = list(filter(lambda x: future_move.to_square in get_sense_squares(x), GOOD_SENSING_SQUARES))            
+            return random.choice(senseActions)
 
-        # # otherwise, just randomly choose a sense action, but don't sense on a square where our pieces are located
-        # #Choose a sense that contains lastKingSquare
-        # for square, piece in self.board.piece_map().items():
-        #     if piece.color == self.color and square in sense_actions:
-        #         sense_actions.remove(square)
-        return random.choice(senseActions)
+        # otherwise, just randomly choose a sense action, but don't sense on a square where our pieces are located
+        #Choose a sense that contains lastKingSquare
+        for senseSquare in GOOD_SENSING_SQUARES:
+            for square in get_sense_squares(senseSquare):
+                piece = self.board.piece_at(square)
+                if piece != None and piece.color == self.color:
+                    senseActions.remove(senseSquare)
+                    break
+        if len(senseActions) > 0:
+            return random.choice(senseActions)
+        return random.choice(GOOD_SENSING_SQUARES)
 
     @quit_on_exceptions
     def handle_sense_result(self, sense_result: List[Tuple[Square, Optional[chess.Piece]]]):
         ##TODO: Improve removal of opponent's pieces that we sensed have moved
         # add the pieces in the sense result to our board
+        senseChoice = sense_result[4][0]
+        senseResultAgrees = (simulate_sense(self.board, senseChoice) == sense_result)
+        self.board.turn = not self.color
+        if not senseResultAgrees and self.board.turn != self.color:
+            moves = get_pseudo_legal_moves({self.board.fen()})
+            for move in moves:
+                if self.my_piece_captured_square != real_capture_square_of_move(self.board, move):
+                    continue
+                self.board.push(move)
+                wouldBeSenseResult = simulate_sense(self.board, senseChoice)
+                if wouldBeSenseResult == sense_result:
+                    return
+                self.board.pop()
         for square, piece in sense_result:
             self.board.set_piece_at(square, piece)
         oppKingSquares = []
@@ -116,6 +148,7 @@ class HelperBot():
     def choose_move(self, move_actions: List[chess.Move], seconds_left: float) -> Optional[chess.Move]:
         self.board.turn = self.color
         print(self.board.fen())
+        self.kingSquare = self.board.king(not self.color)
         # if we might be able to take the king, try to
         if self.kingSquare:
             # if there are any ally pieces that can take king, execute one of those moves
@@ -148,3 +181,6 @@ class HelperBot():
         if taken_move is not None:
             self.board.push(taken_move)
         self.board.turn = not self.color
+
+        self.requestedMove = requested_move
+        self.takenMove = taken_move
