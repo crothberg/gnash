@@ -17,7 +17,7 @@ class HelperBot():
         self.my_piece_captured_square = None
         self.requestedMove = None
         self.takenMove = None
-        
+        self.movesSinceMoved = 0
     @quit_on_exceptions
     def handle_game_start(self, color: Color, board: chess.Board, opponent_name: str):
         self.color = color
@@ -157,6 +157,8 @@ class HelperBot():
                 attacker_square = enemy_king_attackers.pop()
                 return chess.Move(attacker_square, self.kingSquare)
         else:
+            if self.movesSinceMoved > 8:
+                return random.choice(move_actions)
             return None
 
         # otherwise, try to move with the stockfish chess engine
@@ -176,6 +178,10 @@ class HelperBot():
     @quit_on_exceptions
     def handle_move_result(self, requested_move: Optional[chess.Move], taken_move: Optional[chess.Move],
                            captured_opponent_piece: bool, capture_square: Optional[Square]):
+        if requested_move == None:
+            self.movesSinceMoved += 1
+        else:
+            self.movesSinceMoved = 0
         self.board.turn = self.color
         # if a move was executed, apply it to our board
         if taken_move is not None:
