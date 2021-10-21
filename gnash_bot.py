@@ -247,10 +247,10 @@ class GnashBot(Player):
     def set_gear(self, gear):
         self.gear = gear
         if gear == 0:
-            self.handleOppMoveMaxTime = 12
+            self.handleOppMoveMaxTime = 8
             self.handleSenseMaxTime = 5
             self.handleMoveMaxTime = 3
-            self.chooseMoveMaxTime = 5
+            self.chooseMoveMaxTime = 3
             self.maxInDist = 200
         if gear == 1:
             print("Picking up speed...")
