@@ -1,4 +1,5 @@
 import sys
+import os
 import chess
 from strategy.profiles import *
 from reconchess import *
@@ -47,10 +48,10 @@ class GnashBot(Player):
 
         now = datetime.datetime.now()
         gameTimeStr = f"{now.date()}_{now.hour}_{now.minute}_{now.second}"
-        # if not self.isTest and opponent_name not in {"moveFinder", "senseFinder"}:
-        #     outFile = open(f"gameLogs/{opponent_name}_{gameTimeStr}.txt","w")
-        #     sys.stdout = outFile
-        #     sys.stderr = outFile
+        if not self.isTest and opponent_name not in {"moveFinder", "senseFinder"}:
+            # outFile = open(f"gameLogs/{opponent_name}_{gameTimeStr}.txt","w")
+            sys.stdout = open(os.devnull, 'w')
+            sys.stderr = open(os.devnull, 'w')
 
         if not self.useService:
             self.stash = Stash(self.color)

@@ -17,6 +17,8 @@ def score(board : chess.Board, time : float, color : chess.Color):
     if board.is_check():
         board.ep_square = None
     analysis = engines.analyse(board, .01)
+    if analysis == None:
+        return 0 ##TODO: make this better
     score = analysis['score']
     score = score.pov(color).score(mate_score=MATE_SCORE)
 

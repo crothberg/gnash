@@ -65,21 +65,27 @@ def play(board : chess.Board, maxTime, movesToConsider=None):
     if enemyKingAttackers:
         attacker_square = enemyKingAttackers.pop()
         return chess.Move(attacker_square, board.king(not board.turn))
-    if movesToConsider != None:
-        play = engine.play(board, chess.engine.Limit(maxTime), root_moves=movesToConsider)
-    else:
-        play = engine.play(board, chess.engine.Limit(maxTime))
-    EngineGroup.release_engine(engineId)
-    # print('Play complete!')
-    return play.move
+    try:
+        if movesToConsider != None:
+            play = engine.play(board, chess.engine.Limit(maxTime), root_moves=movesToConsider)
+        else:
+            play = engine.play(board, chess.engine.Limit(maxTime))
+        EngineGroup.release_engine(engineId)
+        # print('Play complete!')
+        return play.move
+    except:
+        return None
     
 def analyse(board, maxTime):
     # print('Starting analysis...', flush=True)
     engine, engineId = EngineGroup.get_available_engine()
-    analysis = engine.analyse(board, chess.engine.Limit(maxTime))
-    EngineGroup.release_engine(engineId)
-    # print('Analysis complete!', flush=True)
-    return analysis
+    try:
+        analysis = engine.analyse(board, chess.engine.Limit(maxTime))
+        EngineGroup.release_engine(engineId)
+        # print('Analysis complete!', flush=True)
+        return analysis
+    except:
+        return None
 
 def quit_on_exceptions(func):
     def inner_function(*args, **kwargs):

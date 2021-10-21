@@ -291,7 +291,7 @@ class BeliefState:
         return True
     
     def _check_invariants(self):
-        # return
+        return
         startTime = time.time()
         if not (len(set(self.oppBoardDists.keys()).intersection(self.myBoardDist.keys())) == len(self.myBoardDist) == len(self.oppBoardDists)):
             assert False, (
