@@ -75,9 +75,6 @@ class GnashBot(Player):
 
         self.beliefState = BeliefState(color, board.fen(), self.moveSelector, oppMoveSelector)
 
-        if self.opponent_name in {"Kevin"}:
-            print("Git push was being used.")
-
         if self.opponent_name in {"Fianchetto"}:
             self.beliefState.believedMoveSelector.gambleFactor = 1
             self.beliefState.believedMoveSelector.giveFrivolousChecks = True
