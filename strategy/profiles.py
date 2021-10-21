@@ -22,6 +22,7 @@ profiles = {
     "Kevin": (1,1),
     "Marmot": (.5, .1),
     "Frampt": (0, 1.5),
+    "wbernar5": (.1, 1.5),
     "GarrisonNRL": (.1, .01),
     "default": (.1, 1)
 }
@@ -33,6 +34,7 @@ onlyGivesCheckBots = {
     # "penumbra",
     "Frampt",
     "StrangeFish2",
+    "wbernar5",
     # "Oracle"
 }
 
@@ -44,6 +46,7 @@ giveFrivChecksTo = {
     "TimoBertram",
     "random",
     "RandomBot",
+    "wbernar5"
 }
 
 defaultBelievedOurGambleFactor = .25
