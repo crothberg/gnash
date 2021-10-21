@@ -1,25 +1,25 @@
 profiles = {
     #us and them
-    "Oracle": (.25, 0),
+    "Oracle": (1, .25),
     "random": (1.0, None),
     "RandomBot": (1.0, None),
     "attacker": (.1, 1),
     "AttackBot": (.1, 1),
-    "penumbra": (.1, 1),
+    "penumbra": (1, 1),
     # "Fianchetto": (0, 0), #best bet so far
-    "Fianchetto": (.3, 0), #experimental
+    "Fianchetto": (1, 0), #experimental
     # "Fianchetto": (.5, 0), #experimental (just okay)
-    # "StrangeFish2": (.5, .5), #experimental
+    "StrangeFish2": (1, .1), #experimental
     # "StrangeFish2": (.5, 0), #experimental (0/1)
     # "StrangeFish2": (0, 0),#experimental (0/1) (but didn't seem terrible)
     # "StrangeFish2": (.5, 1), #experimental (fail?)
-    "StrangeFish2": (0.01, 1), #has a win at least but not clear how many, turn off experimental if using
-    # "StrangeFish2": (1, 1), #best bet so far (but pretty untested)
+    # "StrangeFish2": (0.01, 1), #has a win at least but not clear how many, turn off experimental if using
+    # # "StrangeFish2": (1, 1), #best bet so far (but pretty untested)
     "trout": (1, 0), #this is solid.
     "TroutBot": (1, 0),
     "TimoBertram": (.1, 0),
     # "Kevin": (1, 1.3), #nothing is working against Kevin!
-    "Kevin": (0, 0),
+    "Kevin": (.1, .1),
     "Marmot": (.5, .1),
     "default": (.1, 1)
 }
@@ -27,7 +27,7 @@ profiles = {
 onlyGivesCheckBots = {
     "Marmot",
     "DynamicEntropy",
-    "theAgent"
+    "theAgent",
 }
 
 giveFrivChecksTo = {
