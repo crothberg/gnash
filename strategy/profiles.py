@@ -27,7 +27,7 @@ profiles = {
 
 onlyGivesCheckBots = {
     "Marmot",
-    "DynamicEntropy",
+    # "DynamicEntropy",
     "theAgent",
     # "penumbra",
     "Frampt",
