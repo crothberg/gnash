@@ -19,7 +19,7 @@ profiles = {
     "TroutBot": (1, 0),
     "TimoBertram": (.1, 0),
     # "Kevin": (1, 1.3), #nothing is working against Kevin!
-    "Kevin": (1,1),
+    "Kevin": (0,0),
     "Marmot": (.5, .1),
     "Frampt": (0, 1.5),
     "wbernar5": (.1, 1.5),
