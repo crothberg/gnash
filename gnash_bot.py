@@ -75,7 +75,7 @@ class GnashBot(Player):
 
         self.beliefState = BeliefState(color, board.fen(), self.moveSelector, oppMoveSelector)
 
-        if self.opponent_name in {"Kevin", "Fianchetto"}:
+        if self.opponent_name in {"Fianchetto"}:
             self.beliefState.believedMoveSelector.gambleFactor = 1
             self.beliefState.believedMoveSelector.giveFrivolousChecks = True
         else:
