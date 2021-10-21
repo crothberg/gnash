@@ -7,7 +7,7 @@ profiles = {
     "AttackBot": (.1, 1),
     "penumbra": (.7, 1),
     # "Fianchetto": (0, 0), #best bet so far
-    "Fianchetto": (1, 0), #experimental
+    "Fianchetto": (0, 1), #experimental
     # "Fianchetto": (.5, 0), #experimental (just okay)
     "StrangeFish2": (.5, .1), #experimental
     # "StrangeFish2": (.5, 0), #experimental (0/1)
