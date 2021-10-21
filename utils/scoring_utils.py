@@ -30,6 +30,4 @@ def score(board : chess.Board, time : float, color : chess.Color):
     score = max(-.9, min(.9, score))
     score += (1-score)/2
 
-    print(score)
-
     return score
