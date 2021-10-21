@@ -22,6 +22,7 @@ profiles = {
     "Kevin": (.25,25),
     "Marmot": (.5, .1),
     "Frampt": (0, 1.5),
+    "GarrisonNRL": (.1, .01),
     "default": (.1, 1)
 }
 
