@@ -5,11 +5,11 @@ profiles = {
     "RandomBot": (1.0, None),
     "attacker": (.1, 1),
     "AttackBot": (.1, 1),
-    "penumbra": (1, 1),
+    "penumbra": (.5, 1.5),
     # "Fianchetto": (0, 0), #best bet so far
     "Fianchetto": (1, 0), #experimental
     # "Fianchetto": (.5, 0), #experimental (just okay)
-    "StrangeFish2": (1, .1), #experimental
+    "StrangeFish2": (.5, .1), #experimental
     # "StrangeFish2": (.5, 0), #experimental (0/1)
     # "StrangeFish2": (0, 0),#experimental (0/1) (but didn't seem terrible)
     # "StrangeFish2": (.5, 1), #experimental (fail?)
@@ -19,8 +19,9 @@ profiles = {
     "TroutBot": (1, 0),
     "TimoBertram": (.1, 0),
     # "Kevin": (1, 1.3), #nothing is working against Kevin!
-    "Kevin": (.1, .1),
+    "Kevin": (1,1),
     "Marmot": (.5, .1),
+    "Frampt": (0, 1.5),
     "default": (.1, 1)
 }
 
@@ -28,6 +29,9 @@ onlyGivesCheckBots = {
     "Marmot",
     "DynamicEntropy",
     "theAgent",
+    "penumbra",
+    "Frampt",
+    "StrangeFish2"
 }
 
 giveFrivChecksTo = {
