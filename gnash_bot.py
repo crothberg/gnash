@@ -35,7 +35,7 @@ class GnashBot(Player):
         self.isTest = isTest
         self.helperBot = HelperBot()
         self.useHelperBot = False
-        self.useHelperBotTime = 110
+        self.useHelperBotTime = 130
         self.turn = 0
         self.useLocal = True
         self.useService = False
@@ -251,7 +251,7 @@ class GnashBot(Player):
             self.handleSenseMaxTime = 5
             self.handleMoveMaxTime = 3
             self.chooseMoveMaxTime = 5
-            self.maxInDist = 200
+            self.maxInDist = 250
         if gear == 1:
             print("Picking up speed...")
             self.handleOppMoveMaxTime = 9
