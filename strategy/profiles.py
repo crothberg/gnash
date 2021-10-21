@@ -44,7 +44,6 @@ giveFrivChecksTo = {
     "TimoBertram",
     "random",
     "RandomBot",
-    "Kevin",
 }
 
 defaultBelievedOurGambleFactor = .25
