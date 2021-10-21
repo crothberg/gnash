@@ -1,11 +1,11 @@
 profiles = {
     #us and them
-    "Oracle": (1, .4),
+    "Oracle": (1, .25),
     "random": (1.0, None),
     "RandomBot": (1.0, None),
     "attacker": (.1, 1),
     "AttackBot": (.1, 1),
-    "penumbra": (.5, 1.5),
+    "penumbra": (.7, 1),
     # "Fianchetto": (0, 0), #best bet so far
     "Fianchetto": (1, 0), #experimental
     # "Fianchetto": (.5, 0), #experimental (just okay)
@@ -29,10 +29,10 @@ onlyGivesCheckBots = {
     "Marmot",
     "DynamicEntropy",
     "theAgent",
-    "penumbra",
+    # "penumbra",
     "Frampt",
     "StrangeFish2",
-    "Oracle"
+    # "Oracle"
 }
 
 giveFrivChecksTo = {
@@ -44,7 +44,6 @@ giveFrivChecksTo = {
     "random",
     "RandomBot",
     "Kevin",
-    # "StrangeFish2" #only should be on when using (1,1) and experimental
 }
 
 defaultBelievedOurGambleFactor = .25
