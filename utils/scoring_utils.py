@@ -23,11 +23,13 @@ def score(board : chess.Board, time : float, color : chess.Color):
     score = score.pov(color).score(mate_score=MATE_SCORE)
 
     positive = score >= 0
-    score = (abs(score)**(1/6))/(MATE_SCORE**(1/6))
+    score = (abs(score)**(1/3))/(MATE_SCORE**(1/3))
     if not positive: score *= -1
 
     #set score between .05 and .95
     score = max(-.9, min(.9, score))
     score += (1-score)/2
+
+    print(score)
 
     return score
