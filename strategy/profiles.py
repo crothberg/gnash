@@ -1,6 +1,6 @@
 profiles = {
     #us and them
-    "Oracle": (1, .25),
+    "Oracle": (1, .4),
     "random": (1.0, None),
     "RandomBot": (1.0, None),
     "attacker": (.1, 1),
@@ -31,7 +31,8 @@ onlyGivesCheckBots = {
     "theAgent",
     "penumbra",
     "Frampt",
-    "StrangeFish2"
+    "StrangeFish2",
+    "Oracle"
 }
 
 giveFrivChecksTo = {
