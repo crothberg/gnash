@@ -1,12 +1,16 @@
 from collections import defaultdict
 import chess
 import random
+import numpy
 from reconchess.utilities import *
 from utils.scoring_utils import *
 import utils.parallelism_utils as parallel
 import time
 
 from utils.exceptions import EmptyBoardDist
+
+def product(list):
+    return numpy.prod(list)
 
 def normalize(dist, adjust = False, giveToZeros=.10, raiseNum = 0):
     if len(dist) == 0:
@@ -70,17 +74,11 @@ def normalize_our_board_dist(dist, ourColor):
             dist[fen] = max(likelihood, total/min(3, len(dist)))
     #If all boards have the same value.
     if 100 > len(dist) > 1 and all(x >= likelihood/2-.0001 for x in mostLikelyValues):
-    # if True:
-        # print(dist)
         print(f"adjusting dist of size {len(dist)}...")
         t0 = time.time()
-        # input("Here. Hit any key to continue")
         parallel.run_parallel(normalize_board_dist_helper, list((fen, dist) for fen in list(dist.keys())))
-            # gevent.joinall([gevent.spawn(normalize_board_dist_helper, fen, dist) for fen in chunk])
-        # print(dist)
         dist = normalize(dist, adjust=True, giveToZeros=.3, raiseNum=6)
         print(f"Completed after {time.time()-t0} seconds")
-        # input("Completed. Hit any key to continue.")
     return normalize(dist, adjust=True)
 
 def sample(dist, k=1):

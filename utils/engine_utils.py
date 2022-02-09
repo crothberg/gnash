@@ -29,14 +29,12 @@ class EngineGroup:
         new_engine = chess.engine.SimpleEngine.popen_uci(stockfish_path, setpgrp=True)
         engineId = EngineGroup.nextId
         EngineGroup.nextId += 1
-        # print(f'Added new engine {engineId}', flush=True)
         EngineGroup.engines[engineId] = new_engine
         EngineGroup.availableEngines.add(engineId)
     def get_available_engine():
         EngineGroup.lock.acquire()
         if len(EngineGroup.availableEngines) == 0:
             EngineGroup.add_engine()
-            # print(f'Engine list is now {EngineGroup.engines}', flush=True)
         engineId = EngineGroup.availableEngines.pop()
         EngineGroup.lock.release()
         return EngineGroup.engines[engineId], engineId
@@ -59,7 +57,6 @@ def shut_down_engines():
         pass
 
 def play(board : chess.Board, maxTime, movesToConsider=None):
-    # print('Starting play...')
     engine, engineId = EngineGroup.get_available_engine()
     enemyKingAttackers = board.attackers(board.turn, board.king(not board.turn))
     if enemyKingAttackers:
@@ -71,18 +68,15 @@ def play(board : chess.Board, maxTime, movesToConsider=None):
         else:
             play = engine.play(board, chess.engine.Limit(maxTime))
         EngineGroup.release_engine(engineId)
-        # print('Play complete!')
         return play.move
     except:
         return None
     
 def analyse(board, maxTime):
-    # print('Starting analysis...', flush=True)
     engine, engineId = EngineGroup.get_available_engine()
     try:
         analysis = engine.analyse(board, chess.engine.Limit(maxTime))
         EngineGroup.release_engine(engineId)
-        # print('Analysis complete!', flush=True)
         return analysis
     except:
         return None

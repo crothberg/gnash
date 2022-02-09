@@ -134,13 +134,14 @@ class GnashBot(Player):
         t0 = time.time()
         if self.useHelperBot:
             return self.helperBot.choose_sense(sense_actions, move_actions, seconds_left)
+        self.beliefState.display()
         print('\nSensing now...')
         if self.opponent_name in {"attacker", "AttackBot"}:
             if self.turn in {2,3} and not self.color:
                 return 44
             if self.turn in {3,4} and self.color:
                 return 12
-        sense_move = select_sense(self.beliefState.myBoardDist, actuallyUs=True)
+        sense_move = select_sense(self.beliefState.myBoardDist)
         print('\nSensing move is', sense_move)
         print(f"Chose a sensing action in {time.time()-t0} seconds.")
         return sense_move
@@ -169,7 +170,6 @@ class GnashBot(Player):
         except EmptyBoardDist:
             self.get_new_boards()
         self.get_new_boards(urgent=False)
-        # print('Our updated belief dist is now as follows:')
         if not self.useHelperBot:
             if self.useService:
                 self.beliefState.display()

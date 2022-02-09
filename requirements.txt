@@ -1,4 +1,5 @@
-requests==2.26.0
 reconchess==1.6.8
-Flask==2.0.2
+numpy==1.21.2
 chess==1.6.1
+requests==2.26.0
+Flask==2.0.2

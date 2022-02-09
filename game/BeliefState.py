@@ -46,7 +46,7 @@ class BeliefState:
 
     def opp_sense_result_update_helper(self, fen, boardDist):
         board = chess.Board(fen)
-        senseSquare = select_sense(boardDist, actuallyUs=False)
+        senseSquare = select_sense(boardDist)
         senseResult = simulate_sense(board, senseSquare)
         impossibleBoards = set()
         for fen in boardDist:
@@ -291,7 +291,6 @@ class BeliefState:
         return True
     
     def _check_invariants(self):
-        return
         startTime = time.time()
         if not (len(set(self.oppBoardDists.keys()).intersection(self.myBoardDist.keys())) == len(self.myBoardDist) == len(self.oppBoardDists)):
             assert False, (
